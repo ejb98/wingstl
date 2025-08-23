@@ -1,14 +1,20 @@
 # wingstl
-This project is a CLI tool for generating print-ready STL files for swept wings.
+This project is a CLI tool for generating print-ready STL files for swept wings. An example is provided below for the output of a swept wing semi-span.
+
+![Alt text](wing.png)
 
 ## Build Instructions
 This project uses a single C source file, and is not dependent on any third-party libraries. To compile use:
 
-<pre> ```clang wingstl.c -o wingstl``` </pre>
+```bash
+clang wingstl.c -o wingstl
+```
 
 To execute the script, add the location of the executable to your system's path and run:
 
-<pre> ```wingstl``` </pre>
+```bash
+wingstl
+```
 
 The output is a single STL file saved to the current directory. This file may be directly imported to slicer software for 3D printing.
 
