@@ -8,29 +8,38 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include <stdio.h>
 #include <float.h>
+#include <ctype.h>
 #include <math.h>
 
-#define M 0
-#define P 0
-#define T 12
-#define PI 3.14159f
 #define A0 0.2969f
 #define A1 -0.126f
 #define A2 -0.3516f
 #define A3 0.2843f
 #define A4_OPEN -0.1015f
 #define A4_CLOSED -0.1036f
-#define SEMI_SPAN 6.0f
-#define ROOT_CHORD 1.0f
+
+#define MAX_SWEEP 90.0f
+#define MIN_SWEEP 10.0f
+
+#define PI 3.14159f
 #define PI_OVER_180 0.01745f
-#define LEADING_SWEEP 80.0f
-#define TRAILING_SWEEP 85.0f
-#define USE_COSINE_SPACING 1
-#define CLOSE_TRAILING_EDGE 0
-#define NUM_PANELS_SPANWISE 1
-#define NUM_PANELS_CHORDWISE 19
+
+#define FLAG_AIRFOIL "-a"
+#define FLAG_SWEEP_LE "-le"
+#define FLAG_SWEEP_TE "-te"
+#define FLAG_CHORD_PTS "-p"
+#define FLAG_SEMI_SPAN "-b"
+#define FLAG_ROOT_CHORD "-c"
+
+#define NUM_SPAN_PTS 2
+#define MIN_CHORD_PTS 20
+#define MAX_CHORD_PTS 200
+
+#define HAS_CLOSED_TE 1
+#define HAS_COSINE_SPACING 1
 
 typedef struct vec3 {
     float x, y, z;
@@ -58,7 +67,7 @@ size_t sub2ind(int i, int j, int num_cols) {
     return (size_t) i * num_cols + j;
 }
 
-float compute_camber(float x, float m, float p) {
+float get_camber(float x, float m, float p) {
     float a = 2.0f * p * x - x * x;
 
     if (x < p && p > FLT_EPSILON) {
@@ -70,7 +79,7 @@ float compute_camber(float x, float m, float p) {
     return m * (1.0f - 2.0f * p + a) / (b * b);
 }
 
-float compute_gradient(float x, float m, float p) {
+float get_gradient(float x, float m, float p) {
     float a = (2.0f * m) * (p - x);
 
     if (x < p && p > FLT_EPSILON) {
@@ -82,7 +91,7 @@ float compute_gradient(float x, float m, float p) {
     return a / (b * b);
 }
 
-float compute_thickness(float x, float t, bool is_closed) {
+float get_thickness(float x, float t, bool is_closed) {
     float x2 = x * x;
     float a4 = is_closed ? A4_CLOSED: A4_OPEN;  
 
@@ -90,13 +99,13 @@ float compute_thickness(float x, float t, bool is_closed) {
             A3 * x2 * x + a4 * x2 * x2) * t / 0.2f;
 }
 
-float compute_surface_x(float xc, float thickness, float theta, bool is_upper) {
+float get_x_surf(float xc, float thickness, float theta, bool is_upper) {
     float sign = is_upper ? -1.0f : 1.0f;
 
     return xc + sign * thickness * sinf(theta);
 }
 
-float compute_surface_z(float zc, float thickness, float theta, bool is_upper) {
+float get_z_surf(float zc, float thickness, float theta, bool is_upper) {
     float sign = is_upper ? 1.0f : -1.0f;
 
     return zc + sign * thickness * cosf(theta);
@@ -126,7 +135,7 @@ void normalize(vec3 *v) {
     v->z /= d;
 }
 
-float to_radians(float degrees) {
+float to_rads(float degrees) {
     return degrees * PI_OVER_180;
 }
 
@@ -149,14 +158,14 @@ vec3 *make_pts(const wing_props *wing) {
         return NULL;
     }
     
+    float dx_le;
     float theta;
+    float xn_surf;
+    float zn_surf;
     float y_camber;
     float xn_camber;
     float zn_camber;
     float thickness;
-    float xn_surface;
-    float zn_surface;
-    float dx_leading;
     float local_chord;
 
     int row_max = wing->num_pts_chord;
@@ -168,11 +177,11 @@ vec3 *make_pts(const wing_props *wing) {
     float t = wing->airfoil.t / 100.0f;
     float p = wing->airfoil.p / 10.0f;
 
-    float tan_leading = tanf(to_radians(90.0f - wing->sweep_angles[0]));
-    float tan_trailing = tanf(to_radians(90.0f - wing->sweep_angles[1]));
-    float tan_difference = tan_trailing - tan_leading;
+    float tan_le = tanf(to_rads(90.0f - wing->sweep_angles[0]));
+    float tan_te = tanf(to_rads(90.0f - wing->sweep_angles[1]));
+    float tan_diff = tan_te - tan_le;
 
-    size_t index;
+    size_t ind;
 
     for (int is_upper = 1; is_upper >= 0; is_upper--) {
         if (!is_upper) {
@@ -181,15 +190,15 @@ vec3 *make_pts(const wing_props *wing) {
         }
 
         for (int j = 0; j < num_cols; j++) {
+            dx_le = y_camber * tan_le;
             y_camber = wing->semi_span * j / (num_cols - 1);
-            dx_leading = y_camber * tan_leading;
-            local_chord = wing->root_chord + y_camber * tan_difference;
+            local_chord = wing->root_chord + y_camber * tan_diff;
 
             for (int i = row_start; i < row_max; i++) {
                 if (is_upper) {
-                    index = sub2ind(i - row_start, j, num_cols);
+                    ind = sub2ind(i - row_start, j, num_cols);
                 } else {
-                    index = (size_t) num_rows * num_cols + sub2ind(i - row_start, j, num_cols);
+                    ind = (size_t) num_rows * num_cols + sub2ind(i - row_start, j, num_cols);
                 }
 
                 xn_camber = (float) i / (num_rows - 1);
@@ -198,15 +207,15 @@ vec3 *make_pts(const wing_props *wing) {
                     xn_camber = (1.0f - cosf(xn_camber * PI)) / 2.0f;
                 }
 
-                theta = compute_gradient(xn_camber, m, p);
-                thickness = compute_thickness(xn_camber, t, wing->has_closed_te);
-                zn_camber = compute_camber(xn_camber, m, p);
-                zn_surface = compute_surface_z(zn_camber, thickness, theta, is_upper);
-                xn_surface = compute_surface_x(xn_camber, thickness, theta, is_upper);
+                theta = get_gradient(xn_camber, m, p);
+                thickness = get_thickness(xn_camber, t, wing->has_closed_te);
+                zn_camber = get_camber(xn_camber, m, p);
+                zn_surf = get_z_surf(zn_camber, thickness, theta, is_upper);
+                xn_surf = get_x_surf(xn_camber, thickness, theta, is_upper);
 
-                pts[index].y = y_camber;
-                pts[index].z = zn_surface * local_chord;
-                pts[index].x = xn_surface * local_chord + dx_leading;
+                pts[ind].y = y_camber;
+                pts[ind].z = zn_surf * local_chord;
+                pts[ind].x = xn_surf * local_chord + dx_le;
             }
         }
     }
@@ -214,11 +223,11 @@ vec3 *make_pts(const wing_props *wing) {
     return pts;
 }
 
-size_t get_upper_index(const wing_props *wing, int i, int j) {
+size_t get_upper_ind(const wing_props *wing, int i, int j) {
     return sub2ind(i, j, wing->num_pts_span);
 }
 
-size_t get_lower_index(const wing_props *wing, int i, int j) {
+size_t get_lower_ind(const wing_props *wing, int i, int j) {
     bool is_last_row = (i == wing->num_pts_chord - 1);
 
     if (i == 0 || (is_last_row && wing->has_closed_te)) {
@@ -229,30 +238,30 @@ size_t get_lower_index(const wing_props *wing, int i, int j) {
     return (size_t) wing->num_pts_chord * wing->num_pts_span + offset;
 }
 
-size_t fill_upper_lower_indices(const wing_props *wing, size_t k, size_t *indices) {
+size_t fill_upper_lower_inds(const wing_props *wing, size_t k, size_t *inds) {
     size_t corners[4];
 
     for (int is_upper = 1; is_upper >= 0; is_upper--) {
         for (int i = 0; i < wing->num_pts_chord - 1; i++) {
             for (int j = 0; j < wing->num_pts_span - 1; j++) {
                 if (is_upper) {
-                    corners[0] = get_upper_index(wing, i, j);
-                    corners[1] = get_upper_index(wing, i, j + 1);
-                    corners[2] = get_upper_index(wing, i + 1, j + 1);
-                    corners[3] = get_upper_index(wing, i + 1, j);
+                    corners[0] = get_upper_ind(wing, i, j);
+                    corners[1] = get_upper_ind(wing, i, j + 1);
+                    corners[2] = get_upper_ind(wing, i + 1, j + 1);
+                    corners[3] = get_upper_ind(wing, i + 1, j);
                 } else {
-                    corners[0] = get_lower_index(wing, i, j + 1);
-                    corners[1] = get_lower_index(wing, i, j);
-                    corners[2] = get_lower_index(wing, i + 1, j);
-                    corners[3] = get_lower_index(wing, i + 1, j + 1);
+                    corners[0] = get_lower_ind(wing, i, j + 1);
+                    corners[1] = get_lower_ind(wing, i, j);
+                    corners[2] = get_lower_ind(wing, i + 1, j);
+                    corners[3] = get_lower_ind(wing, i + 1, j + 1);
                 }
 
-                indices[k++] = corners[3];
-                indices[k++] = corners[2];
-                indices[k++] = corners[1];
-                indices[k++] = corners[3];
-                indices[k++] = corners[1];
-                indices[k++] = corners[0];
+                inds[k++] = corners[3];
+                inds[k++] = corners[2];
+                inds[k++] = corners[1];
+                inds[k++] = corners[3];
+                inds[k++] = corners[1];
+                inds[k++] = corners[0];
             }
         }
     }
@@ -260,7 +269,7 @@ size_t fill_upper_lower_indices(const wing_props *wing, size_t k, size_t *indice
     return k;
 }
 
-size_t fill_port_starboard_indices(const wing_props *wing, size_t k, size_t *indices) {
+size_t fill_port_star_inds(const wing_props *wing, size_t k, size_t *inds) {
     int j;
     bool is_last_row;
     size_t corners[4];
@@ -272,44 +281,44 @@ size_t fill_port_starboard_indices(const wing_props *wing, size_t k, size_t *ind
             is_last_row = (i == wing->num_pts_chord - 2);
 
             if (i == 0) {
-                indices[k++] = get_upper_index(wing, i, j);
+                inds[k++] = get_upper_ind(wing, i, j);
 
                 if (is_port) {
-                    indices[k++] = get_lower_index(wing, i + 1, j);
-                    indices[k++] = get_upper_index(wing, i + 1, j);
+                    inds[k++] = get_lower_ind(wing, i + 1, j);
+                    inds[k++] = get_upper_ind(wing, i + 1, j);
                 } else {
-                    indices[k++] = get_upper_index(wing, i + 1, j);
-                    indices[k++] = get_lower_index(wing, i + 1, j);
+                    inds[k++] = get_upper_ind(wing, i + 1, j);
+                    inds[k++] = get_lower_ind(wing, i + 1, j);
                 }
             } else if (is_last_row && wing->has_closed_te) {
-                indices[k++] = get_lower_index(wing, i + 1, j);
+                inds[k++] = get_lower_ind(wing, i + 1, j);
 
                 if (is_port) {
-                    indices[k++] = get_upper_index(wing, i, j);
-                    indices[k++] = get_lower_index(wing, i, j);
+                    inds[k++] = get_upper_ind(wing, i, j);
+                    inds[k++] = get_lower_ind(wing, i, j);
                 } else {
-                    indices[k++] = get_lower_index(wing, i, j);
-                    indices[k++] = get_upper_index(wing, i, j);
+                    inds[k++] = get_lower_ind(wing, i, j);
+                    inds[k++] = get_upper_ind(wing, i, j);
                 }
             } else {
                 if (is_port) {
-                    corners[0] = get_lower_index(wing, i, j);
-                    corners[1] = get_lower_index(wing, i + 1, j);
-                    corners[2] = get_upper_index(wing, i + 1, j);
-                    corners[3] = get_upper_index(wing, i, j);
+                    corners[0] = get_lower_ind(wing, i, j);
+                    corners[1] = get_lower_ind(wing, i + 1, j);
+                    corners[2] = get_upper_ind(wing, i + 1, j);
+                    corners[3] = get_upper_ind(wing, i, j);
                 } else {
-                    corners[0] = get_lower_index(wing, i + 1, j);
-                    corners[1] = get_lower_index(wing, i, j);
-                    corners[2] = get_upper_index(wing, i, j);
-                    corners[3] = get_upper_index(wing, i + 1, j);
+                    corners[0] = get_lower_ind(wing, i + 1, j);
+                    corners[1] = get_lower_ind(wing, i, j);
+                    corners[2] = get_upper_ind(wing, i, j);
+                    corners[3] = get_upper_ind(wing, i + 1, j);
                 }
 
-                indices[k++] = corners[0];
-                indices[k++] = corners[1];
-                indices[k++] = corners[2];
-                indices[k++] = corners[0];
-                indices[k++] = corners[2];
-                indices[k++] = corners[3];
+                inds[k++] = corners[0];
+                inds[k++] = corners[1];
+                inds[k++] = corners[2];
+                inds[k++] = corners[0];
+                inds[k++] = corners[2];
+                inds[k++] = corners[3];
             }
         }
     }
@@ -317,47 +326,47 @@ size_t fill_port_starboard_indices(const wing_props *wing, size_t k, size_t *ind
     return k;
 }
 
-size_t fill_aft_indices(const wing_props *wing, size_t k, size_t *indices) {
+size_t fill_aft_inds(const wing_props *wing, size_t k, size_t *inds) {
     int i = wing->num_pts_chord - 1;
     size_t corners[4];
 
     for (int j = 0; j < wing->num_pts_span - 1; j++) {
-        corners[0] = get_lower_index(wing, i, j);
-        corners[1] = get_lower_index(wing, i, j + 1);
-        corners[2] = get_upper_index(wing, i, j + 1);
-        corners[3] = get_upper_index(wing, i, j);
+        corners[0] = get_lower_ind(wing, i, j);
+        corners[1] = get_lower_ind(wing, i, j + 1);
+        corners[2] = get_upper_ind(wing, i, j + 1);
+        corners[3] = get_upper_ind(wing, i, j);
 
-        indices[k++] = corners[0];
-        indices[k++] = corners[1];
-        indices[k++] = corners[2];
-        indices[k++] = corners[0];
-        indices[k++] = corners[2];
-        indices[k++] = corners[3];
+        inds[k++] = corners[0];
+        inds[k++] = corners[1];
+        inds[k++] = corners[2];
+        inds[k++] = corners[0];
+        inds[k++] = corners[2];
+        inds[k++] = corners[3];
     }
 
     return k;
 }
 
-size_t *make_indices(const wing_props *wing) {
+size_t *make_inds(const wing_props *wing) {
     size_t k = 0;
-    size_t num_triangles = get_num_tris(wing);
-    size_t *indices = (size_t *) malloc(3 * num_triangles * sizeof(size_t));
+    size_t num_tris = get_num_tris(wing);
+    size_t *inds = (size_t *) malloc(3 * num_tris * sizeof(size_t));
 
-    if (indices == NULL) {
+    if (inds == NULL) {
         return NULL;
     }
 
-    k = fill_upper_lower_indices(wing, k, indices);
-    k = fill_port_starboard_indices(wing, k, indices);
+    k = fill_upper_lower_inds(wing, k, inds);
+    k = fill_port_star_inds(wing, k, inds);
 
     if (!wing->has_closed_te) {
-        k = fill_aft_indices(wing, k, indices);
+        k = fill_aft_inds(wing, k, inds);
     }
 
-    size_t num_triangles_created = k / 3;
-    assert(num_triangles_created == num_triangles);
+    size_t num_tris_created = k / 3;
+    assert(num_tris_created == num_tris);
 
-    return indices;
+    return inds;
 }
 
 void write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *file_name) {
@@ -372,7 +381,9 @@ void write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *fi
     size_t k = 0;
 
     vec3 a, b, n;
-    vec3 *v0, *v1, *v2;
+    vec3 *v0 = NULL;
+    vec3 *v1 = NULL;
+    vec3 *v2 = NULL;
 
     fprintf(fp, "solid \n");
 
@@ -399,17 +410,285 @@ void write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *fi
     fclose(fp);
 }
 
+float handle_semi_span(int iarg, int num_args, char **args) {
+    float semi_span = -1.0f;
+
+    if (iarg + 1 < num_args) {
+        semi_span = atof(args[iarg + 1]);
+
+        if (semi_span <= 0.0f) {
+            fprintf(stderr, "wingstl: error: value for option %s must be a nonzero positive number (e.g., 6.0)\n", FLAG_SEMI_SPAN);
+
+            return -1.0f;
+        }
+
+    } else {
+        fprintf(stderr, "wingstl: error: option %s (semi span) requires a value (e.g., 6.0)\n", FLAG_SEMI_SPAN);
+
+        return -1.0f;
+    }
+
+    return semi_span;
+}
+
+float handle_root_chord(int iarg, int num_args, char **args) {
+    float root_chord = -1.0f;
+
+    if (iarg + 1 < num_args) {
+        root_chord = atof(args[iarg + 1]);
+
+        if (root_chord <= 0.0f) {
+            fprintf(stderr, "wingstl: error: value for option %s must be a nonzero positive number (e.g., 1.0)\n", FLAG_ROOT_CHORD);
+
+            return -1.0f;
+        }
+
+    } else {
+        fprintf(stderr, "wingstl: error: option %s (root chord) requires a value (e.g., 1.0)\n", FLAG_ROOT_CHORD);
+
+        return -1.0f;
+    }
+
+    return root_chord;
+}
+
+naca4 handle_airfoil(int iarg, int num_args, char **args) {
+    naca4 airfoil = {.m = -1};
+
+    if (iarg + 1 < num_args) {
+        char *arg = args[iarg + 1];
+        int num_digits = strlen(arg);
+
+        if (num_digits != 4) {
+            fprintf(stderr, "wingstl: error: value for option %s must be exactly four digits (e.g., 2412)\n", FLAG_AIRFOIL);
+
+            return airfoil;
+        }
+
+        char digit;
+        for (int j = 0; j < num_digits; j++) {
+            digit = arg[j];
+
+            if (!isdigit(digit)) {
+                fprintf(stderr, "wingstl: error: value for option %s must contain only digits (e.g., 2412)\n", FLAG_AIRFOIL);
+
+                airfoil.m = -1;
+                return airfoil;
+            }
+
+            switch (j) {
+                case 0:
+                    airfoil.m = digit - '0';
+                    break;
+                case 1:
+                    airfoil.p = digit - '0';
+                    break;
+                case 2:
+                    airfoil.t = digit - '0';
+                    break;
+                case 3:
+                    airfoil.t = 10 * airfoil.t + (digit - '0');
+                    break;
+                default:
+                    fprintf(stderr, "wingstl: error: value for option %s must be exactly four digits (e.g., 2412)\n", FLAG_AIRFOIL);
+
+                    airfoil.m = -1;
+                    return airfoil;
+            }
+        }
+
+    } else {
+        fprintf(stderr, "wingstl: error: option %s (naca 4-digit airfoil) requires a value (e.g., 2412)\n", FLAG_AIRFOIL);
+
+        return airfoil;
+    }
+
+    return airfoil;
+}
+
+int handle_chord_pts(int iarg, int num_args, char **args) {
+    int num_pts;
+
+    if (iarg + 1 < num_args) {
+        char *arg = args[iarg + 1];
+
+        if (strchr(arg, '.')) {
+            fprintf(stderr, "wingstl: error: value for option %s must be an integer\n", FLAG_CHORD_PTS);
+
+            return -1;
+        }
+
+        num_pts = atoi(arg);
+
+        if (num_pts < MIN_CHORD_PTS) {
+            fprintf(stderr, "wingstl: error: value for option %s must be %d at least\n", FLAG_CHORD_PTS, MIN_CHORD_PTS);
+
+            return -1;
+        }
+
+        if (num_pts > MAX_CHORD_PTS) {
+            fprintf(stderr, "wingstl: error: value for option %s must be %d at most\n", FLAG_CHORD_PTS, MAX_CHORD_PTS);
+
+            return -1;
+        }
+
+    } else {
+        fprintf(stderr, "wingstl: error: option %s (number of chordwise points) requires a value (e.g., 50)\n", FLAG_CHORD_PTS);
+
+        return -1;
+    }
+
+    return num_pts;
+}
+
+float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
+    float sweep = -1.0f;
+
+    if (iarg + 1 < num_args) {
+        char *arg = args[iarg + 1];
+        sweep = atof(arg);
+
+        if (sweep < MIN_SWEEP) {
+            fprintf(stderr, "wingstl: error: value for option %s must be %f at least\n", arg_flag , MIN_SWEEP);
+
+            return -1.0f;
+        }
+
+        if (sweep > MAX_SWEEP) {
+            fprintf(stderr, "wingstl: error: value for option %s must be %f at most\n", arg_flag, MAX_SWEEP);
+
+            return -1.0f;
+        }
+
+    } else {
+        fprintf(stderr, "wingstl: error: option %s (leading edge sweep angle) requires a value (e.g., 80.0)\n", arg_flag);
+
+        return -1.0f;
+    }
+
+    return sweep;
+}
+
+bool wing_tip_overlaps(const wing_props *wing) {
+    float offsets[2];
+
+    for (int i = 0; i < 2; i++) {
+        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
+    }
+
+    return wing->root_chord + offsets[1] <= offsets[0];
+}
+
+int handle_inputs(int num_args, char **args, wing_props *wing) {
+    char *arg = NULL;
+
+    for (int i = 1; i < num_args; i++) {
+        arg = args[i];
+
+        if (arg[0] != '-') {
+            fprintf(stderr, "wingstl: error: argument flags must begin with a hyphen '-'\n");
+
+            return 1;
+        }
+
+        if (strcmp(arg, FLAG_SEMI_SPAN) == 0) {
+            wing->semi_span = handle_semi_span(i, num_args, args);
+            i++;
+
+            if (wing->semi_span < 0.0f) {
+                return 1;
+            }
+
+        } else if (strcmp(arg, FLAG_ROOT_CHORD) == 0) {
+            wing->root_chord = handle_root_chord(i, num_args, args);
+            i++;
+
+            if (wing->root_chord < 0.0f) {
+                return 1;
+            }
+
+        } else if (strcmp(arg, FLAG_AIRFOIL) == 0) {
+            wing->airfoil = handle_airfoil(i, num_args, args);
+            i++;
+
+            if (wing->airfoil.m < 0) {
+                return 1;
+            }
+        } else if (strcmp(arg, FLAG_CHORD_PTS) == 0) {
+            wing->num_pts_chord = handle_chord_pts(i, num_args, args);
+            i++;
+
+            if (wing->num_pts_chord < 0) {
+                return 1;
+            }
+
+        } else if (strcmp(arg, FLAG_SWEEP_LE) == 0) {
+            wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_LE);
+            i++;
+
+            if (wing->sweep_angles[0] < 0.0f) {
+                return 1;
+            }
+
+        } else if (strcmp(arg, FLAG_SWEEP_TE) == 0) {
+            wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
+            i++;
+
+            if (wing->sweep_angles[0] < 0.0f) {
+                return 1;
+            }
+
+        } else {
+            fprintf(stderr, "wingstl: error: unrecognized argument flag '%s'\n", arg);
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     wing_props wing = {
-        .airfoil = {M, P, T},
-        .semi_span = SEMI_SPAN,
-        .root_chord = ROOT_CHORD,
-        .sweep_angles = {LEADING_SWEEP, TRAILING_SWEEP},
-        .has_closed_te = CLOSE_TRAILING_EDGE,
-        .has_cosine_spacing = USE_COSINE_SPACING,
-        .num_pts_span = NUM_PANELS_SPANWISE + 1,
-        .num_pts_chord = NUM_PANELS_CHORDWISE + 1,
+        .airfoil = {.m = -1},
+        .semi_span = -1.0f,
+        .root_chord = -1.0f,
+        .sweep_angles = {MAX_SWEEP, MAX_SWEEP},
+        .num_pts_span = NUM_SPAN_PTS,
+        .num_pts_chord = MIN_CHORD_PTS,
+        .has_closed_te = HAS_CLOSED_TE,
+        .has_cosine_spacing = HAS_COSINE_SPACING
     };
+
+    if (handle_inputs(argc, argv, &wing)) {
+        return 1;
+    }
+
+    if (wing.airfoil.m < 0) {
+        fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
+
+        return 1;
+    }
+
+    if (wing.semi_span < 0.0f) {
+        fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
+        
+        return 1;
+    }
+
+    if (wing.root_chord < 0.0f) {
+        fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
+        
+        return 1;
+    }
+
+    if (wing_tip_overlaps(&wing)) {
+        fprintf(stderr, "wingstl: error: wing tip overlap detected\n");
+        fprintf(stderr, "         try using a different value for '%s', '%s', or '%s'\n", 
+                                  FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN);
+
+        return 1;
+    }
 
     vec3 *pts = make_pts(&wing);
 
@@ -419,7 +698,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    size_t *indices = make_indices(&wing);
+    size_t *indices = make_inds(&wing);
 
     if (indices == NULL) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for triangle indices\n");
