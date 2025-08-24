@@ -1,7 +1,7 @@
 # wingstl
 This project is a CLI tool for generating print-ready STL files for swept wings. An example is provided below for the output of a swept wing semi-span.
 
-![Alt text](wing.png)
+![Alt text](images/wing.png)
 
 ## Build Instructions
 This project is structured with `include` and `src` folders, and is not dependent on any third-party libraries. To compile use:

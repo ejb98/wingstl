@@ -1,4 +1,7 @@
+*.o
 *.exe
 *.stl
 *.txt
 *.pdf
+
+.vscode/
