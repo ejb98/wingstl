@@ -9,7 +9,7 @@
 #include "utils.h"
 #include "types.h"
 
-int write_stl(vec3d *pts, const size_t *indices, size_t num_tris, const char *file_name) {
+int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *file_name) {
     FILE *fp = fopen(file_name, "w");
 
     if (fp == NULL) {
@@ -18,10 +18,10 @@ int write_stl(vec3d *pts, const size_t *indices, size_t num_tris, const char *fi
 
     size_t k = 0;
 
-    vec3d a, b, n;
-    vec3d *v0 = NULL;
-    vec3d *v1 = NULL;
-    vec3d *v2 = NULL;
+    Vec3D a, b, n;
+    Vec3D *v0 = NULL;
+    Vec3D *v1 = NULL;
+    Vec3D *v2 = NULL;
 
     fprintf(fp, "solid \n");
 

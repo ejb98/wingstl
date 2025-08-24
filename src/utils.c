@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <float.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "types.h"
@@ -14,23 +15,44 @@ float to_rads(float degrees) {
     return degrees * PI_OVER_180;
 }
 
+float to_meters(float value, Units units) {
+    switch (units) {
+        case FEET:
+            return value / FEET_PER_METER;
+        case INCHES:
+            return value / INCHES_PER_METER;
+        case METERS:
+            return value;
+        case CENTIMETERS:
+            return value / 100.0f;
+        case MILLIMETERS:
+            return value / 1000.0f;
+        case INVALID:
+            fprintf(stderr, "wingstl: warning: value cannot be converted to meters\n");
+            return value;
+        default:
+            fprintf(stderr, "wingstl: warning: value cannot be converted to meters\n");
+            return value;
+    }
+}
+
 size_t sub2ind(int i, int j, int num_cols) {
     return (size_t) i * num_cols + j;
 }
 
-void cross(const vec3d *a, const vec3d *b, vec3d *v) {
+void cross(const Vec3D *a, const Vec3D *b, Vec3D *v) {
     v->x = a->y * b->z - a->z * b->y;
     v->y = a->z * b->x - a->x * b->z;
     v->z = a->x * b->y - a->y * b->x;
 }
 
-void subtract(const vec3d *a, const vec3d *b, vec3d *v) {
+void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v) {
     v->x = a->x - b->x;
     v->y = a->y - b->y;
     v->z = a->z - b->z;
 }
 
-void normalize(vec3d *v) {
+void normalize(Vec3D *v) {
     float d = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
 
     if (d <= FLT_EPSILON) {

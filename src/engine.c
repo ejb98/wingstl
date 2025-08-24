@@ -57,11 +57,11 @@ float get_z_surf(float zc, float thickness, float theta, bool is_upper) {
     return zc + sign * thickness * cosf(theta);
 }
 
-size_t get_num_pts(const wing3d *wing) {
+size_t get_num_pts(const Wing *wing) {
     return (size_t) wing->num_pts_span * (2 * wing->num_pts_chord - wing->has_closed_te - 1);
 }
 
-size_t get_num_tris(const wing3d *wing) {
+size_t get_num_tris(const Wing *wing) {
     size_t num_tris_surf = (wing->num_pts_chord - 1) * (wing->num_pts_span - 1) * 2;
     size_t num_tris_side = 2 * wing->num_pts_chord - wing->has_closed_te - 3;
     size_t num_tris_aft = !wing->has_closed_te * (wing->num_pts_span - 1) * 2;
@@ -69,8 +69,8 @@ size_t get_num_tris(const wing3d *wing) {
     return 2 * (num_tris_surf + num_tris_side) + num_tris_aft;
 }
 
-vec3d *make_pts(const wing3d *wing) {
-    vec3d *pts = (vec3d *) malloc(get_num_pts(wing) * sizeof(vec3d));
+Vec3D *make_pts(const Wing *wing) {
+    Vec3D *pts = (Vec3D *) malloc(get_num_pts(wing) * sizeof(Vec3D));
 
     if (pts == NULL) {
         return NULL;
@@ -131,9 +131,9 @@ vec3d *make_pts(const wing3d *wing) {
                 zn_surf = get_z_surf(zn_camber, thickness, theta, is_upper);
                 xn_surf = get_x_surf(xn_camber, thickness, theta, is_upper);
 
-                pts[ind].y = y_camber;
-                pts[ind].z = zn_surf * local_chord;
-                pts[ind].x = xn_surf * local_chord + dx_le;
+                pts[ind].y = to_meters(y_camber, wing->units);
+                pts[ind].z = to_meters(zn_surf * local_chord, wing->units);
+                pts[ind].x = to_meters(xn_surf * local_chord + dx_le, wing->units);
             }
         }
     }
@@ -141,11 +141,11 @@ vec3d *make_pts(const wing3d *wing) {
     return pts;
 }
 
-size_t get_upper_ind(const wing3d *wing, int i, int j) {
+size_t get_upper_ind(const Wing *wing, int i, int j) {
     return sub2ind(i, j, wing->num_pts_span);
 }
 
-size_t get_lower_ind(const wing3d *wing, int i, int j) {
+size_t get_lower_ind(const Wing *wing, int i, int j) {
     bool is_last_row = (i == wing->num_pts_chord - 1);
 
     if (i == 0 || (is_last_row && wing->has_closed_te)) {
@@ -156,7 +156,7 @@ size_t get_lower_ind(const wing3d *wing, int i, int j) {
     return (size_t) wing->num_pts_chord * wing->num_pts_span + offset;
 }
 
-size_t fill_upper_lower_inds(const wing3d *wing, size_t k, size_t *inds) {
+size_t fill_upper_lower_inds(const Wing *wing, size_t k, size_t *inds) {
     size_t corners[4];
 
     for (int is_upper = 1; is_upper >= 0; is_upper--) {
@@ -187,7 +187,7 @@ size_t fill_upper_lower_inds(const wing3d *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t fill_port_star_inds(const wing3d *wing, size_t k, size_t *inds) {
+size_t fill_port_star_inds(const Wing *wing, size_t k, size_t *inds) {
     int j;
     bool is_last_row;
     size_t corners[4];
@@ -244,7 +244,7 @@ size_t fill_port_star_inds(const wing3d *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t fill_aft_inds(const wing3d *wing, size_t k, size_t *inds) {
+size_t fill_aft_inds(const Wing *wing, size_t k, size_t *inds) {
     int i = wing->num_pts_chord - 1;
     size_t corners[4];
 
@@ -265,7 +265,7 @@ size_t fill_aft_inds(const wing3d *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t *make_inds(const wing3d *wing) {
+size_t *make_inds(const Wing *wing) {
     size_t k = 0;
     size_t num_tris = get_num_tris(wing);
     size_t *inds = (size_t *) malloc(3 * num_tris * sizeof(size_t));
@@ -287,16 +287,21 @@ size_t *make_inds(const wing3d *wing) {
     return inds;
 }
 
-float get_aspect_ratio(const wing3d *wing) {
-    float b = 2.0f * wing->semi_span;
+float get_surf_area(const Wing *wing) {
     float dx_le = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[0]));
     float dx_te = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[1]));
-    float s = 2.0f * wing->root_chord * wing->semi_span + wing->semi_span * (dx_te - dx_le);
+    
+    return 2.0f * wing->root_chord * wing->semi_span + wing->semi_span * (dx_te - dx_le);
+}
+
+float get_aspect_ratio(const Wing *wing) {
+    float s = get_surf_area(wing);
+    float b = 2.0f * wing->semi_span;
 
     return (s > FLT_EPSILON) ? b * b / s : 0.0f;
 }
 
-bool tip_overlaps(const wing3d *wing) {
+bool tip_overlaps(const Wing *wing) {
     float offsets[2];
 
     for (int i = 0; i < 2; i++) {

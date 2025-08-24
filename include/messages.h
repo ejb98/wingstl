@@ -3,13 +3,13 @@
  * License: GPLv3 (see end of file for full notice, or LICENSE file in repo)
  */
 
-#ifndef FILEIO_H
-#define FILEIO_H
+#ifndef MESSAGES_H
+#define MESSAGES_H
 
-#include <stdlib.h>
 #include "types.h"
 
-int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *file_name);
+void show_help(void);
+void show_wing_props(const Wing *wing);
 
 #endif
 

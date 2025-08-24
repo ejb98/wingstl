@@ -16,21 +16,35 @@
 #define PI 3.14159f
 #define PI_OVER_180 0.01745f
 
-#define MIN_SWEEP 0.0f
-#define MAX_SWEEP 180.0f
+#define MIN_SWEEP 1
+#define MAX_SWEEP 179
 #define MIN_CHORD_PTS 20
 #define MAX_CHORD_PTS 200
+#define MIN_ASPECT_RATIO 1.0f
+#define MAX_ASPECT_RATIO 100.0f
 
+#define FLAG_HELP "-h"
+#define FLAG_UNITS "-u"
 #define FLAG_AIRFOIL "-a"
+#define FLAG_VERBOSE "-v"
 #define FLAG_SWEEP_LE "-le"
 #define FLAG_SWEEP_TE "-te"
 #define FLAG_CHORD_PTS "-p"
 #define FLAG_SEMI_SPAN "-b"
 #define FLAG_ROOT_CHORD "-c"
 
-#define NUM_SPAN_PTS 2
-#define HAS_CLOSED_TE 1
-#define HAS_COSINE_SPACING 1
+#define DEFAULT_AIRFOIL -1
+#define DEFAULT_SWEEP_LE 90.0f
+#define DEFAULT_SWEEP_TE 90.0f
+#define DEFAULT_SEMI_SPAN -1.0f
+#define DEFAULT_ROOT_CHORD -1.0f
+#define DEFAULT_NUM_SPAN_PTS 2
+#define DEFAULT_NUM_CHORD_PTS 100
+#define DEFAULT_HAS_CLOSED_TE 1
+#define DEFAULT_HAS_COSINE_SPACING 1
+
+#define FEET_PER_METER 3.28084f
+#define INCHES_PER_METER 39.3701f
 
 #endif
 

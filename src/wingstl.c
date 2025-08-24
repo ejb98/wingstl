@@ -4,71 +4,43 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 
-#include "utils.h"
 #include "types.h"
 #include "fileio.h"
 #include "engine.h"
 #include "parsing.h"
+#include "messages.h"
 #include "constants.h"
+#include "validation.h"
 
 int main(int argc, char **argv) {
-    wing3d wing = {
-        .airfoil = {-1},
-        .semi_span = -1.0f,
-        .root_chord = -1.0f,
-        .sweep_angles = {90.0f, 90.0f},
-        .num_pts_span = NUM_SPAN_PTS,
-        .num_pts_chord = MIN_CHORD_PTS,
-        .has_closed_te = HAS_CLOSED_TE,
-        .has_cosine_spacing = HAS_COSINE_SPACING
+    Wing wing = {
+        .units = METERS,
+        .airfoil = {DEFAULT_AIRFOIL},
+        .semi_span = DEFAULT_SEMI_SPAN,
+        .root_chord = DEFAULT_ROOT_CHORD,
+        .sweep_angles = {DEFAULT_SWEEP_LE, DEFAULT_SWEEP_TE},
+        .num_pts_span = DEFAULT_NUM_SPAN_PTS,
+        .num_pts_chord = DEFAULT_NUM_CHORD_PTS,
+        .has_closed_te = DEFAULT_HAS_CLOSED_TE,
+        .has_cosine_spacing = DEFAULT_HAS_COSINE_SPACING
     };
 
-    if (handle_inputs(argc, argv, &wing)) {
+    Settings settings = {.verbose = false};
+
+    if (handle_inputs(argc, argv, &wing, &settings)) {
         return 0;
     }
 
-    if (wing.airfoil.m < 0) {
-        fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
-
+    if (validate(&wing)) {
         return 0;
     }
 
-    if (wing.semi_span < 0.0f) {
-        fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
-        
-        return 0;
-    }
-
-    if (wing.root_chord < 0.0f) {
-        fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
-        
-        return 0;
-    }
-
-    if (tip_overlaps(&wing)) {
-        fprintf(stderr, "wingstl: error: wing tip overlap detected; ");
-        fprintf(stderr, "try adjusting values for '%s', '%s', '%s' or '%s'\n", 
-                FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD);
-
-        return 0;
-    }
-
-    float aspect_ratio = get_aspect_ratio(&wing);
-
-    if (aspect_ratio < 1.0f || aspect_ratio > 100.0f) {
-        fprintf(stderr, "wingstl: error: extreme aspect ratio detected; ");
-        fprintf(stderr, "try adjusting values for '%s', '%s', '%s' or '%s'\n", 
-                FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD);
-
-        return 0;
-    }
-
-    vec3d *pts = make_pts(&wing);
+    Vec3D *pts = make_pts(&wing);
 
     if (pts == NULL) {
-        fprintf(stderr, "wingstl: error: unable to allocate memory for surface vertices\n");
-
+        fprintf(stderr, "wingstl: error: unable to allocate memory for vertices\n");
         return 0;
     }
 
@@ -81,12 +53,19 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (write_stl(pts, indices, get_num_tris(&wing), "wing.stl")) {
+    char file_name[] = "wing.stl";
+
+    if (write_stl(pts, indices, get_num_tris(&wing), file_name)) {
         fprintf(stderr, "wingstl: error: unable to open STL file for writing\n");
         free(indices);
         free(pts);
 
         return 0;
+    }
+
+    if (settings.verbose) {
+        printf("STL file '%s' written successfully\n\n", file_name);
+        show_wing_props(&wing);
     }
     
     free(indices);

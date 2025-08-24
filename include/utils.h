@@ -10,10 +10,13 @@
 #include "types.h"
 
 size_t sub2ind(int i, int j, int num_cols);
+
 float to_rads(float degrees);
-void cross(const vec3d *a, const vec3d *b, vec3d *v);
-void subtract(const vec3d *a, const vec3d *b, vec3d *v);
-void normalize(vec3d *v);
+float to_meters(float value, Units units);
+
+void cross(const Vec3D *a, const Vec3D *b, Vec3D *v);
+void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
+void normalize(Vec3D *v);
 
 #endif
 

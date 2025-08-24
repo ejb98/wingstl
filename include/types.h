@@ -8,16 +8,26 @@
 
 #include <stdbool.h>
 
-typedef struct vec3d {
+typedef struct Vec3D {
     float x, y, z;
-} vec3d;
+} Vec3D;
 
-typedef struct naca4 {
+typedef struct NACA4Digit {
     int m, p, t;
-} naca4;
+} NACA4Digit;
 
-typedef struct wing3d {
-    naca4 airfoil;
+typedef enum Units {
+    FEET,
+    INCHES,
+    METERS,
+    CENTIMETERS,
+    MILLIMETERS,
+    INVALID
+} Units;
+
+typedef struct Wing {
+    Units units;
+    NACA4Digit airfoil;
     
     int num_pts_span;
     int num_pts_chord;
@@ -28,7 +38,11 @@ typedef struct wing3d {
 
     bool has_closed_te;
     bool has_cosine_spacing;
-} wing3d;
+} Wing;
+
+typedef struct Settings {
+    bool verbose;
+} Settings;
 
 #endif
 

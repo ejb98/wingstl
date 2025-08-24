@@ -3,66 +3,103 @@
  * License: GPLv3 (see end of file for full notice, or LICENSE file in repo)
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 
 #include "types.h"
+#include "messages.h"
 #include "constants.h"
 
-float handle_semi_span(int iarg, int num_args, char **args) {
-    float semi_span = -1.0f;
+void request_val(const char *desc, const char *flag) {
+    printf("wingstl: value required for %s (flag '%s')\n", desc, flag);
+}
+
+void request_nonzero_pos_num(const char *desc, const char *flag) {
+    printf("wingstl: nonzero positive number required for %s (flag '%s')\n", desc, flag);
+}
+
+bool verbose_specified(int num_args, char **args) {
+
+    return false;
+}
+
+void request_n_digit_int(const char *desc, const char *flag, int n) {
+    char noun[] = "digits";
+    int len = strlen(noun);
+
+    if (n == 1) {
+        noun[len - 1] = '\0';
+    }
+
+    printf("wingstl: value for %s (flag '%s') must be an integer with exactly %d %s\n", desc, flag, n, noun);
+}
+
+void request_bounded_int(const char *desc, const char *flag, int val, const char *qualifier) {
+    printf("wingstl: value for %s (flag '%s') must be %d %s\n", desc, flag, val, qualifier);
+}
+
+float handle_nonzero_pos_num(int iarg, int num_args, char **args, const char *desc, const char *flag) {
+    float value = -1.0f;
 
     if (iarg + 1 < num_args) {
-        semi_span = atof(args[iarg + 1]);
+        value = atof(args[iarg + 1]);
 
-        if (semi_span <= 0.0f) {
-            fprintf(stderr, "wingstl: error: value for option %s must be a nonzero positive number (e.g., 6.0)\n", FLAG_SEMI_SPAN);
-
+        if (value <= 0.0f) {
+            request_nonzero_pos_num(desc, flag);
             return -1.0f;
         }
 
     } else {
-        fprintf(stderr, "wingstl: error: option %s (semi span) requires a value (e.g., 6.0)\n", FLAG_SEMI_SPAN);
-
+        request_val(desc, flag);
         return -1.0f;
     }
 
-    return semi_span;
+    return value;
 }
 
-float handle_root_chord(int iarg, int num_args, char **args) {
-    float root_chord = -1.0f;
+Units handle_units(int iarg, int num_args, char **args) {
+    Units units = INVALID;
 
     if (iarg + 1 < num_args) {
-        root_chord = atof(args[iarg + 1]);
+        char *arg = args[iarg + 1];
 
-        if (root_chord <= 0.0f) {
-            fprintf(stderr, "wingstl: error: value for option %s must be a nonzero positive number (e.g., 1.0)\n", FLAG_ROOT_CHORD);
-
-            return -1.0f;
+        if (strcmp(arg, "m") == 0) {
+            return METERS;
+        } else if (strcmp(arg, "cm") == 0) {
+            return CENTIMETERS;
+        } else if (strcmp(arg, "mm") == 0) {
+            return MILLIMETERS;
+        } else if (strcmp(arg, "ft") == 0) {
+            return FEET;
+        } else if (strcmp(arg, "in") == 0) {
+            return INCHES;
+        } else {
+            printf("wingstl: valid options for units (flag '%s') are: ", FLAG_UNITS);
+            printf("'m', 'cm', 'mm', 'ft' or 'in'\n");
+            return INVALID;
         }
 
     } else {
-        fprintf(stderr, "wingstl: error: option %s (root chord) requires a value (e.g., 1.0)\n", FLAG_ROOT_CHORD);
-
-        return -1.0f;
+        request_val("units", FLAG_UNITS);
+        return INVALID;
     }
 
-    return root_chord;
+    return units;
 }
 
-naca4 handle_airfoil(int iarg, int num_args, char **args) {
-    naca4 airfoil = {.m = -1};
+NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
+    NACA4Digit airfoil = {.m = -1};
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
         int num_digits = strlen(arg);
 
         if (num_digits != 4) {
-            fprintf(stderr, "wingstl: error: value for option %s must be exactly four digits (e.g., 2412)\n", FLAG_AIRFOIL);
-
+            request_n_digit_int("naca airfoil", FLAG_AIRFOIL, 4);
+            airfoil.m = -1;
             return airfoil;
         }
 
@@ -71,8 +108,7 @@ naca4 handle_airfoil(int iarg, int num_args, char **args) {
             digit = arg[j];
 
             if (!isdigit(digit)) {
-                fprintf(stderr, "wingstl: error: value for option %s must contain only digits (e.g., 2412)\n", FLAG_AIRFOIL);
-
+                request_n_digit_int("naca airfoil", FLAG_AIRFOIL, 4);
                 airfoil.m = -1;
                 return airfoil;
             }
@@ -91,16 +127,15 @@ naca4 handle_airfoil(int iarg, int num_args, char **args) {
                     airfoil.t = 10 * airfoil.t + (digit - '0');
                     break;
                 default:
-                    fprintf(stderr, "wingstl: error: value for option %s must be exactly four digits (e.g., 2412)\n", FLAG_AIRFOIL);
-
+                    request_n_digit_int("naca airfoil", FLAG_AIRFOIL, 4);
                     airfoil.m = -1;
                     return airfoil;
             }
         }
 
     } else {
-        fprintf(stderr, "wingstl: error: option %s (naca 4-digit airfoil) requires a value (e.g., 2412)\n", FLAG_AIRFOIL);
-
+        request_val("naca 4-digit airfoil", FLAG_AIRFOIL);
+        airfoil.m = -1;
         return airfoil;
     }
 
@@ -108,34 +143,25 @@ naca4 handle_airfoil(int iarg, int num_args, char **args) {
 }
 
 int handle_chord_pts(int iarg, int num_args, char **args) {
-    int num_pts;
+    int num_pts = -1;
+    char desc[] = "number of chordwise points";
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
-
-        if (strchr(arg, '.')) {
-            fprintf(stderr, "wingstl: error: value for option %s must be an integer\n", FLAG_CHORD_PTS);
-
-            return -1;
-        }
-
         num_pts = atoi(arg);
 
         if (num_pts < MIN_CHORD_PTS) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %d at least\n", FLAG_CHORD_PTS, MIN_CHORD_PTS);
-
+            request_bounded_int(desc, FLAG_CHORD_PTS, MIN_CHORD_PTS, "at least");
             return -1;
         }
 
         if (num_pts > MAX_CHORD_PTS) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %d at most\n", FLAG_CHORD_PTS, MAX_CHORD_PTS);
-
+            request_bounded_int(desc, FLAG_CHORD_PTS, MAX_CHORD_PTS, "at most");
             return -1;
         }
 
     } else {
-        fprintf(stderr, "wingstl: error: option %s (number of chordwise points) requires a value (e.g., 50)\n", FLAG_CHORD_PTS);
-
+        request_val(desc, FLAG_CHORD_PTS);
         return -1;
     }
 
@@ -143,90 +169,87 @@ int handle_chord_pts(int iarg, int num_args, char **args) {
 }
 
 float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
+    char desc[32];
     float sweep = -1.0f;
+
+    bool is_le = strcmp(arg_flag, FLAG_SWEEP_LE) == 0;
+    snprintf(desc, sizeof(desc), "%s edge sweep angle", is_le ? "leading" : "trailing");
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
         sweep = atof(arg);
 
-        if (sweep <= MIN_SWEEP || sweep >= MAX_SWEEP) {
-            fprintf(stderr, "wingstl: error: value for option %s must be a number betwen %.0f - %.0f (exclusive)\n",
-                    arg_flag , MIN_SWEEP, MAX_SWEEP);
+        if (sweep <= 0.0f) {
+            request_nonzero_pos_num(desc, arg_flag);
+            return -1.0f;
+        }
 
+        if (sweep < MIN_SWEEP) {
+            request_bounded_int(desc, arg_flag, MIN_SWEEP, "at least");
+            return -1.0f;
+        }
+
+        if (sweep > MAX_SWEEP) {
+            request_bounded_int(desc, arg_flag, MAX_SWEEP, "at most");
             return -1.0f;
         }
 
     } else {
-        fprintf(stderr, "wingstl: error: option %s (leading edge sweep angle) requires a value (e.g., 80.0)\n", arg_flag);
-
+        request_val(desc, arg_flag);
         return -1.0f;
     }
 
     return sweep;
 }
 
-int handle_inputs(int num_args, char **args, wing3d *wing) {
+int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
     char *arg = NULL;
 
     for (int i = 1; i < num_args; i++) {
         arg = args[i];
 
         if (arg[0] != '-') {
-            fprintf(stderr, "wingstl: error: argument flags must begin with a hyphen '-'\n");
-
+            printf("wingstl: argument flags must begin with a hyphen '-'\n");
             return 1;
         }
 
-        if (strcmp(arg, FLAG_SEMI_SPAN) == 0) {
-            wing->semi_span = handle_semi_span(i, num_args, args);
-            i++;
+        if (strcmp(arg, FLAG_VERBOSE) == 0) {
+            settings->verbose = true;
 
-            if (wing->semi_span < 0.0f) {
-                return 1;
-            }
+        } else if (strcmp(arg, FLAG_HELP) == 0) {
+            show_help();
+            return 1;
+
+        } else if (strcmp(arg, FLAG_SEMI_SPAN) == 0) {
+            wing->semi_span = handle_nonzero_pos_num(i, num_args, args, "semi span", FLAG_SEMI_SPAN);
+            if (wing->semi_span < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_ROOT_CHORD) == 0) {
-            wing->root_chord = handle_root_chord(i, num_args, args);
-            i++;
-
-            if (wing->root_chord < 0.0f) {
-                return 1;
-            }
+            wing->root_chord = handle_nonzero_pos_num(i, num_args, args, "root chord", FLAG_ROOT_CHORD);
+            if (wing->root_chord < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_AIRFOIL) == 0) {
             wing->airfoil = handle_airfoil(i, num_args, args);
-            i++;
-
-            if (wing->airfoil.m < 0) {
-                return 1;
-            }
+            if (wing->airfoil.m < 0) { return 1; } else { i++; }
+            
         } else if (strcmp(arg, FLAG_CHORD_PTS) == 0) {
             wing->num_pts_chord = handle_chord_pts(i, num_args, args);
-            i++;
-
-            if (wing->num_pts_chord < 0) {
-                return 1;
-            }
+            if (wing->num_pts_chord < 0) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_SWEEP_LE) == 0) {
             wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_LE);
-            i++;
-
-            if (wing->sweep_angles[0] < 0.0f) {
-                return 1;
-            }
+            if (wing->sweep_angles[0] < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_SWEEP_TE) == 0) {
             wing->sweep_angles[1] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
-            i++;
+            if (wing->sweep_angles[1] < 0.0f) { return 1; } else { i++; }
 
-            if (wing->sweep_angles[0] < 0.0f) {
-                return 1;
-            }
+        } else if (strcmp(arg, FLAG_UNITS) == 0) {
+            wing->units = handle_units(i, num_args, args);
+            if (wing->units == INVALID) { return 1; } else { i++; }
 
         } else {
-            fprintf(stderr, "wingstl: error: unrecognized argument flag '%s'\n", arg);
-
+            printf("wingstl: unrecognized argument flag '%s'\n", arg);
             return 1;
         }
     }
