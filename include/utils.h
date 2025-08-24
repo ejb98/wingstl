@@ -6,7 +6,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <stdlib.h>
 #include "types.h"
 
 size_t sub2ind(int i, int j, int num_cols);
