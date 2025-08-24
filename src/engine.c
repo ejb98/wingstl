@@ -1,67 +1,18 @@
 /*
  * Copyright (C) 2025 Ethan Billingsley
- *
- * Licensed under the GNU General Public License v3.0 or later (GPLv3+).
- * See end of file for details.
+ * License: GPLv3 (see end of file for full notice, or LICENSE file in repo)
  */
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <string.h>
 #include <stdio.h>
 #include <float.h>
-#include <ctype.h>
 #include <math.h>
 
-#define A0 0.2969f
-#define A1 -0.126f
-#define A2 -0.3516f
-#define A3 0.2843f
-#define A4_OPEN -0.1015f
-#define A4_CLOSED -0.1036f
-
-#define MAX_SWEEP 90.0f
-#define MIN_SWEEP 10.0f
-
-#define PI 3.14159f
-#define PI_OVER_180 0.01745f
-
-#define FLAG_AIRFOIL "-a"
-#define FLAG_SWEEP_LE "-le"
-#define FLAG_SWEEP_TE "-te"
-#define FLAG_CHORD_PTS "-p"
-#define FLAG_SEMI_SPAN "-b"
-#define FLAG_ROOT_CHORD "-c"
-
-#define NUM_SPAN_PTS 2
-#define MIN_CHORD_PTS 20
-#define MAX_CHORD_PTS 200
-
-#define HAS_CLOSED_TE 1
-#define HAS_COSINE_SPACING 1
-
-typedef struct vec3 {
-    float x, y, z;
-} vec3;
-
-typedef struct naca4 {
-    int m, p, t;
-} naca4;
-
-typedef struct wing_props {
-    naca4 airfoil;
-
-    int num_pts_span;
-    int num_pts_chord;
-
-    float semi_span;
-    float root_chord;
-    float sweep_angles[2];
-
-    bool has_closed_te;
-    bool has_cosine_spacing;
-} wing_props;
+#include "utils.h"
+#include "types.h"
+#include "constants.h"
 
 size_t sub2ind(int i, int j, int num_cols) {
     return (size_t) i * num_cols + j;
@@ -133,10 +84,6 @@ void normalize(vec3 *v) {
     v->x /= d;
     v->y /= d;
     v->z /= d;
-}
-
-float to_rads(float degrees) {
-    return degrees * PI_OVER_180;
 }
 
 size_t get_num_pts(const wing_props *wing) {
@@ -369,13 +316,11 @@ size_t *make_inds(const wing_props *wing) {
     return inds;
 }
 
-void write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *file_name) {
+int write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *file_name) {
     FILE *fp = fopen(file_name, "w");
 
     if (fp == NULL) {
-        fprintf(stderr, "wingstl: error: unable to open STL file\n");
-
-        return;
+        return 1;
     }
 
     size_t k = 0;
@@ -408,324 +353,25 @@ void write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *fi
 
     fprintf(fp, "endsolid ");
     fclose(fp);
-}
-
-float handle_semi_span(int iarg, int num_args, char **args) {
-    float semi_span = -1.0f;
-
-    if (iarg + 1 < num_args) {
-        semi_span = atof(args[iarg + 1]);
-
-        if (semi_span <= 0.0f) {
-            fprintf(stderr, "wingstl: error: value for option %s must be a nonzero positive number (e.g., 6.0)\n", FLAG_SEMI_SPAN);
-
-            return -1.0f;
-        }
-
-    } else {
-        fprintf(stderr, "wingstl: error: option %s (semi span) requires a value (e.g., 6.0)\n", FLAG_SEMI_SPAN);
-
-        return -1.0f;
-    }
-
-    return semi_span;
-}
-
-float handle_root_chord(int iarg, int num_args, char **args) {
-    float root_chord = -1.0f;
-
-    if (iarg + 1 < num_args) {
-        root_chord = atof(args[iarg + 1]);
-
-        if (root_chord <= 0.0f) {
-            fprintf(stderr, "wingstl: error: value for option %s must be a nonzero positive number (e.g., 1.0)\n", FLAG_ROOT_CHORD);
-
-            return -1.0f;
-        }
-
-    } else {
-        fprintf(stderr, "wingstl: error: option %s (root chord) requires a value (e.g., 1.0)\n", FLAG_ROOT_CHORD);
-
-        return -1.0f;
-    }
-
-    return root_chord;
-}
-
-naca4 handle_airfoil(int iarg, int num_args, char **args) {
-    naca4 airfoil = {.m = -1};
-
-    if (iarg + 1 < num_args) {
-        char *arg = args[iarg + 1];
-        int num_digits = strlen(arg);
-
-        if (num_digits != 4) {
-            fprintf(stderr, "wingstl: error: value for option %s must be exactly four digits (e.g., 2412)\n", FLAG_AIRFOIL);
-
-            return airfoil;
-        }
-
-        char digit;
-        for (int j = 0; j < num_digits; j++) {
-            digit = arg[j];
-
-            if (!isdigit(digit)) {
-                fprintf(stderr, "wingstl: error: value for option %s must contain only digits (e.g., 2412)\n", FLAG_AIRFOIL);
-
-                airfoil.m = -1;
-                return airfoil;
-            }
-
-            switch (j) {
-                case 0:
-                    airfoil.m = digit - '0';
-                    break;
-                case 1:
-                    airfoil.p = digit - '0';
-                    break;
-                case 2:
-                    airfoil.t = digit - '0';
-                    break;
-                case 3:
-                    airfoil.t = 10 * airfoil.t + (digit - '0');
-                    break;
-                default:
-                    fprintf(stderr, "wingstl: error: value for option %s must be exactly four digits (e.g., 2412)\n", FLAG_AIRFOIL);
-
-                    airfoil.m = -1;
-                    return airfoil;
-            }
-        }
-
-    } else {
-        fprintf(stderr, "wingstl: error: option %s (naca 4-digit airfoil) requires a value (e.g., 2412)\n", FLAG_AIRFOIL);
-
-        return airfoil;
-    }
-
-    return airfoil;
-}
-
-int handle_chord_pts(int iarg, int num_args, char **args) {
-    int num_pts;
-
-    if (iarg + 1 < num_args) {
-        char *arg = args[iarg + 1];
-
-        if (strchr(arg, '.')) {
-            fprintf(stderr, "wingstl: error: value for option %s must be an integer\n", FLAG_CHORD_PTS);
-
-            return -1;
-        }
-
-        num_pts = atoi(arg);
-
-        if (num_pts < MIN_CHORD_PTS) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %d at least\n", FLAG_CHORD_PTS, MIN_CHORD_PTS);
-
-            return -1;
-        }
-
-        if (num_pts > MAX_CHORD_PTS) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %d at most\n", FLAG_CHORD_PTS, MAX_CHORD_PTS);
-
-            return -1;
-        }
-
-    } else {
-        fprintf(stderr, "wingstl: error: option %s (number of chordwise points) requires a value (e.g., 50)\n", FLAG_CHORD_PTS);
-
-        return -1;
-    }
-
-    return num_pts;
-}
-
-float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
-    float sweep = -1.0f;
-
-    if (iarg + 1 < num_args) {
-        char *arg = args[iarg + 1];
-        sweep = atof(arg);
-
-        if (sweep < MIN_SWEEP) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %f at least\n", arg_flag , MIN_SWEEP);
-
-            return -1.0f;
-        }
-
-        if (sweep > MAX_SWEEP) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %f at most\n", arg_flag, MAX_SWEEP);
-
-            return -1.0f;
-        }
-
-    } else {
-        fprintf(stderr, "wingstl: error: option %s (leading edge sweep angle) requires a value (e.g., 80.0)\n", arg_flag);
-
-        return -1.0f;
-    }
-
-    return sweep;
-}
-
-bool wing_tip_overlaps(const wing_props *wing) {
-    float offsets[2];
-
-    for (int i = 0; i < 2; i++) {
-        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
-    }
-
-    return wing->root_chord + offsets[1] <= offsets[0];
-}
-
-int handle_inputs(int num_args, char **args, wing_props *wing) {
-    char *arg = NULL;
-
-    for (int i = 1; i < num_args; i++) {
-        arg = args[i];
-
-        if (arg[0] != '-') {
-            fprintf(stderr, "wingstl: error: argument flags must begin with a hyphen '-'\n");
-
-            return 1;
-        }
-
-        if (strcmp(arg, FLAG_SEMI_SPAN) == 0) {
-            wing->semi_span = handle_semi_span(i, num_args, args);
-            i++;
-
-            if (wing->semi_span < 0.0f) {
-                return 1;
-            }
-
-        } else if (strcmp(arg, FLAG_ROOT_CHORD) == 0) {
-            wing->root_chord = handle_root_chord(i, num_args, args);
-            i++;
-
-            if (wing->root_chord < 0.0f) {
-                return 1;
-            }
-
-        } else if (strcmp(arg, FLAG_AIRFOIL) == 0) {
-            wing->airfoil = handle_airfoil(i, num_args, args);
-            i++;
-
-            if (wing->airfoil.m < 0) {
-                return 1;
-            }
-        } else if (strcmp(arg, FLAG_CHORD_PTS) == 0) {
-            wing->num_pts_chord = handle_chord_pts(i, num_args, args);
-            i++;
-
-            if (wing->num_pts_chord < 0) {
-                return 1;
-            }
-
-        } else if (strcmp(arg, FLAG_SWEEP_LE) == 0) {
-            wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_LE);
-            i++;
-
-            if (wing->sweep_angles[0] < 0.0f) {
-                return 1;
-            }
-
-        } else if (strcmp(arg, FLAG_SWEEP_TE) == 0) {
-            wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
-            i++;
-
-            if (wing->sweep_angles[0] < 0.0f) {
-                return 1;
-            }
-
-        } else {
-            fprintf(stderr, "wingstl: error: unrecognized argument flag '%s'\n", arg);
-
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-int main(int argc, char **argv) {
-    wing_props wing = {
-        .airfoil = {.m = -1},
-        .semi_span = -1.0f,
-        .root_chord = -1.0f,
-        .sweep_angles = {MAX_SWEEP, MAX_SWEEP},
-        .num_pts_span = NUM_SPAN_PTS,
-        .num_pts_chord = MIN_CHORD_PTS,
-        .has_closed_te = HAS_CLOSED_TE,
-        .has_cosine_spacing = HAS_COSINE_SPACING
-    };
-
-    if (handle_inputs(argc, argv, &wing)) {
-        return 1;
-    }
-
-    if (wing.airfoil.m < 0) {
-        fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
-
-        return 1;
-    }
-
-    if (wing.semi_span < 0.0f) {
-        fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
-        
-        return 1;
-    }
-
-    if (wing.root_chord < 0.0f) {
-        fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
-        
-        return 1;
-    }
-
-    if (wing_tip_overlaps(&wing)) {
-        fprintf(stderr, "wingstl: error: wing tip overlap detected\n");
-        fprintf(stderr, "         try using a different value for '%s', '%s', or '%s'\n", 
-                                  FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN);
-
-        return 1;
-    }
-
-    vec3 *pts = make_pts(&wing);
-
-    if (pts == NULL) {
-        fprintf(stderr, "wingstl: error: unable to allocate memory for surface vertices\n");
-
-        return 1;
-    }
-
-    size_t *indices = make_inds(&wing);
-
-    if (indices == NULL) {
-        fprintf(stderr, "wingstl: error: unable to allocate memory for triangle indices\n");
-        free(pts);
-
-        return 1;
-    }
-
-    write_stl(pts, indices, get_num_tris(&wing), "wing.stl");
-    
-    free(indices);
-    free(pts);
 
     return 0;
 }
 
 /*
+ * ------------------------------------------------------------------------
+ * This file is part of wingstl.
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * ------------------------------------------------------------------------
  */
