@@ -198,6 +198,11 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
 }
 
 int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
+    if (num_args == 1) {
+        printf("wingstl: missing required arguments; use flag ('%s') for help\n", FLAG_HELP);
+        return 1;
+    }
+
     char *arg = NULL;
 
     for (int i = 1; i < num_args; i++) {
