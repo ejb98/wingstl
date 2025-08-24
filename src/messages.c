@@ -12,7 +12,9 @@
 
 void show_help(void) {
     printf("Usage: wingstl [OPTIONS]\n\n");
-    printf("Generate an STL of a wing given dimensions and NACA airfoil.\n\n");
+    
+    printf("Generate an STL file for a swept wing given dimensions and NACA airfoil.\n\n");
+
     printf("Options:\n");
     printf("  %s\t\tShow this help message and exit\n", FLAG_HELP);
     printf("  %s\t\tEnable verbose output\n", FLAG_VERBOSE);
@@ -23,31 +25,33 @@ void show_help(void) {
     printf("  %s  STR\tUnits (default: m)\n", FLAG_UNITS);
     printf("  %s REAL\tLeading edge sweep angle in degrees (default: %.0f)\n", FLAG_SWEEP_LE, DEFAULT_SWEEP_LE);
     printf("  %s REAL\tTrailing edge sweep angle in degrees (default: %.0f)\n\n", FLAG_SWEEP_TE, DEFAULT_SWEEP_TE);
+
     printf("Examples:\n");
     printf("  wingstl %s 2412 %s 6 %s 1 %s\n", FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_VERBOSE);
     printf("  wingstl %s 1224 %s 3 %s 0.75 %s in %s 85 %s 85\n\n", 
               FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_UNITS, FLAG_SWEEP_LE, FLAG_SWEEP_TE);
+
     printf("Report bugs to: github.com/ejb98/wingstl\n");
 }
 
 void show_wing_props(const Wing *wing) {
-    char units[16];
+    char units[8];
 
     switch (wing->units) {
         case METERS:
-            strcpy(units, "meters");
+            strcpy(units, "m");
             break;
         case CENTIMETERS:
-            strcpy(units, "centimeters");
+            strcpy(units, "cm");
             break;
         case MILLIMETERS:
-            strcpy(units, "millimeters");
+            strcpy(units, "mm");
             break;
         case FEET:
-            strcpy(units, "feet");
+            strcpy(units, "ft");
             break;
         case INCHES:
-            strcpy(units, "inches");
+            strcpy(units, "in");
             break;
         case INVALID:
             strcpy(units, "units");
@@ -61,9 +65,9 @@ void show_wing_props(const Wing *wing) {
     printf("  Root chord length:\t\t%.2f %s\n", wing->root_chord, units);
     printf("  Airfoil profile:\t\tNACA %d%d%d\n", wing->airfoil.m, wing->airfoil.p, wing->airfoil.t);
     printf("  Full wing aspect ratio:\t%.2f\n", get_aspect_ratio(wing));
-    printf("  Full wing surface area:\t%.2f square %s\n", get_surf_area(wing), units);
-    printf("  Leading edge sweep angle:\t%.2f degrees\n", wing->sweep_angles[0]);
-    printf("  Trailing edge sweep angle:\t%.2f degrees\n", wing->sweep_angles[1]);
+    printf("  Full wing surface area:\t%.2f sq %s\n", get_surf_area(wing), units);
+    printf("  Leading edge sweep angle:\t%.2f deg\n", wing->sweep_angles[0]);
+    printf("  Trailing edge sweep angle:\t%.2f deg\n", wing->sweep_angles[1]);
     printf("  Trailing edge configuration:\t%s\n", (wing->has_closed_te ? "closed" : "open"));
     printf("  Spanwise points:\t\t%d\n", wing->num_pts_span);
     printf("  Chordwise points:\t\t%d\n", wing->num_pts_chord);
