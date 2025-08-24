@@ -16,6 +16,22 @@
 #define PI 3.14159f
 #define PI_OVER_180 0.01745f
 
+#define MIN_SWEEP 0.0f
+#define MAX_SWEEP 180.0f
+#define MIN_CHORD_PTS 20
+#define MAX_CHORD_PTS 200
+
+#define FLAG_AIRFOIL "-a"
+#define FLAG_SWEEP_LE "-le"
+#define FLAG_SWEEP_TE "-te"
+#define FLAG_CHORD_PTS "-p"
+#define FLAG_SEMI_SPAN "-b"
+#define FLAG_ROOT_CHORD "-c"
+
+#define NUM_SPAN_PTS 2
+#define HAS_CLOSED_TE 1
+#define HAS_COSINE_SPACING 1
+
 #endif
 
 /*

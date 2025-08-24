@@ -10,18 +10,7 @@
 
 #include "utils.h"
 #include "types.h"
-
-#define MAX_SWEEP 90.0f
-#define MIN_SWEEP 10.0f
-#define MIN_CHORD_PTS 20
-#define MAX_CHORD_PTS 200
-
-#define FLAG_AIRFOIL "-a"
-#define FLAG_SWEEP_LE "-le"
-#define FLAG_SWEEP_TE "-te"
-#define FLAG_CHORD_PTS "-p"
-#define FLAG_SEMI_SPAN "-b"
-#define FLAG_ROOT_CHORD "-c"
+#include "constants.h"
 
 float handle_semi_span(int iarg, int num_args, char **args) {
     float semi_span = -1.0f;
@@ -161,14 +150,9 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
         char *arg = args[iarg + 1];
         sweep = atof(arg);
 
-        if (sweep < MIN_SWEEP) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %f at least\n", arg_flag , MIN_SWEEP);
-
-            return -1.0f;
-        }
-
-        if (sweep > MAX_SWEEP) {
-            fprintf(stderr, "wingstl: error: value for option %s must be %f at most\n", arg_flag, MAX_SWEEP);
+        if (sweep <= MIN_SWEEP || sweep >= MAX_SWEEP) {
+            fprintf(stderr, "wingstl: error: value for option %s must be a number betwen %.0f - %.0f (exclusive)\n",
+                    arg_flag , MIN_SWEEP, MAX_SWEEP);
 
             return -1.0f;
         }
@@ -180,16 +164,6 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
     }
 
     return sweep;
-}
-
-bool wing_tip_overlaps(const wing_props *wing) {
-    float offsets[2];
-
-    for (int i = 0; i < 2; i++) {
-        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
-    }
-
-    return wing->root_chord + offsets[1] <= offsets[0];
 }
 
 int handle_inputs(int num_args, char **args, wing_props *wing) {
@@ -244,7 +218,7 @@ int handle_inputs(int num_args, char **args, wing_props *wing) {
             }
 
         } else if (strcmp(arg, FLAG_SWEEP_TE) == 0) {
-            wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
+            wing->sweep_angles[1] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
             i++;
 
             if (wing->sweep_angles[0] < 0.0f) {

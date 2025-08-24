@@ -122,9 +122,8 @@ vec3 *make_pts(const wing_props *wing) {
     int row_start = 0;
 
     float m = wing->airfoil.m / 100.0f;
-    float t = wing->airfoil.t / 100.0f;
     float p = wing->airfoil.p / 10.0f;
-
+    float t = wing->airfoil.t / 100.0f;
     float tan_le = tanf(to_rads(90.0f - wing->sweep_angles[0]));
     float tan_te = tanf(to_rads(90.0f - wing->sweep_angles[1]));
 

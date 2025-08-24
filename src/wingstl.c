@@ -5,57 +5,63 @@
 
 #include <stdio.h>
 
+#include "utils.h"
 #include "types.h"
 #include "engine.h"
 #include "parsing.h"
-
-#define NUM_SPAN_PTS 2
-#define HAS_CLOSED_TE 1
-#define HAS_COSINE_SPACING 1
+#include "constants.h"
 
 int main(int argc, char **argv) {
     wing_props wing = {
-        .airfoil = {2, 4, 12},
-        .semi_span = 6.0f,
-        .root_chord = 1.0f,
-        .sweep_angles = {80.0f, 85.0f},
+        .airfoil = {-1},
+        .semi_span = -1.0f,
+        .root_chord = -1.0f,
+        .sweep_angles = {90.0f, 90.0f},
         .num_pts_span = NUM_SPAN_PTS,
         .num_pts_chord = MIN_CHORD_PTS,
         .has_closed_te = HAS_CLOSED_TE,
         .has_cosine_spacing = HAS_COSINE_SPACING
     };
 
-    printf("%f, %f\n", wing.sweep_angles[0], wing.sweep_angles[1]);
+    if (handle_inputs(argc, argv, &wing)) {
+        return 0;
+    }
 
-    // if (handle_inputs(argc, argv, &wing)) {
-    //     return 0;
-    // }
+    if (wing.airfoil.m < 0) {
+        fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
 
-    // if (wing.airfoil.m < 0) {
-    //     fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
+        return 0;
+    }
 
-    //     return 0;
-    // }
-
-    // if (wing.semi_span < 0.0f) {
-    //     fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
+    if (wing.semi_span < 0.0f) {
+        fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
         
-    //     return 0;
-    // }
+        return 0;
+    }
 
-    // if (wing.root_chord < 0.0f) {
-    //     fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
+    if (wing.root_chord < 0.0f) {
+        fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
         
-    //     return 0;
-    // }
+        return 0;
+    }
 
-    // if (wing_tip_overlaps(&wing)) {
-    //     fprintf(stderr, "wingstl: error: wing tip overlap detected\n");
-    //     fprintf(stderr, "         try using a different value for '%s', '%s', or '%s'\n", 
-    //                               FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN);
+    if (tip_overlaps(&wing)) {
+        fprintf(stderr, "wingstl: error: wing tip overlap detected; ");
+        fprintf(stderr, "try adjusting values for '%s', '%s', '%s' or '%s'\n", 
+                FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD);
 
-    //     return 0;
-    // }
+        return 0;
+    }
+
+    float aspect_ratio = get_aspect_ratio(&wing);
+
+    if (aspect_ratio < 1.0f || aspect_ratio > 100.0f) {
+        fprintf(stderr, "wingstl: error: extreme aspect ratio detected; ");
+        fprintf(stderr, "try adjusting values for '%s', '%s', '%s' or '%s'\n", 
+                FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD);
+
+        return 0;
+    }
 
     vec3 *pts = make_pts(&wing);
 

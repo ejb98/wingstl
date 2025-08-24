@@ -18,7 +18,7 @@ typedef struct naca4 {
 
 typedef struct wing_props {
     naca4 airfoil;
-
+    
     int num_pts_span;
     int num_pts_chord;
 

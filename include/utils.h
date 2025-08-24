@@ -6,7 +6,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdbool.h>
+#include "types.h"
+
 float to_rads(float degrees);
+float get_aspect_ratio(const wing_props *wing);
+bool tip_overlaps(const wing_props *wing);
 
 #endif
 

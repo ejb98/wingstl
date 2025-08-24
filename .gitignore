@@ -3,5 +3,6 @@
 *.stl
 *.txt
 *.pdf
+*.ps1
 
 .vscode/

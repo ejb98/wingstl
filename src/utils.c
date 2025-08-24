@@ -4,10 +4,33 @@
  */
 
 #include <math.h>
+#include <float.h>
+#include <stdbool.h>
+
+#include "types.h"
 #include "constants.h"
 
 float to_rads(float degrees) {
     return degrees * PI_OVER_180;
+}
+
+float get_aspect_ratio(const wing_props *wing) {
+    float b = 2.0f * wing->semi_span;
+    float dx_le = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[0]));
+    float dx_te = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[1]));
+    float s = 2.0f * wing->root_chord * wing->semi_span + wing->semi_span * (dx_te - dx_le);
+
+    return (s > FLT_EPSILON) ? b * b / s : 0.0f;
+}
+
+bool tip_overlaps(const wing_props *wing) {
+    float offsets[2];
+
+    for (int i = 0; i < 2; i++) {
+        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
+    }
+
+    return wing->root_chord + offsets[1] <= offsets[0];
 }
 
 /*

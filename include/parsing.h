@@ -6,22 +6,6 @@
 #ifndef PARSING_H
 #define PARSING_H
 
-#include <stdbool.h>
-#include <stdio.h>
-#include "types.h"
-
-#define MAX_SWEEP 90.0f
-#define MIN_SWEEP 10.0f
-#define MIN_CHORD_PTS 20
-#define MAX_CHORD_PTS 200
-
-#define FLAG_AIRFOIL "-a"
-#define FLAG_SWEEP_LE "-le"
-#define FLAG_SWEEP_TE "-te"
-#define FLAG_CHORD_PTS "-p"
-#define FLAG_SEMI_SPAN "-b"
-#define FLAG_ROOT_CHORD "-c"
-
 int handle_chord_pts(int iarg, int num_args, char **args);
 int handle_inputs(int num_args, char **args, wing_props *wing);
 
@@ -29,8 +13,7 @@ float handle_semi_span(int iarg, int num_args, char **args);
 float handle_root_chord(int iarg, int num_args, char **args);
 float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag);
 
-bool wing_tip_overlaps(const wing_props *wing);
-naca4 handle_airfoil(int iarg, int num_args, char **args);
+int handle_airfoil(int iarg, int num_args, char **args);
 
 #endif
 
