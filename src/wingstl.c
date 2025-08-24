@@ -7,12 +7,13 @@
 
 #include "utils.h"
 #include "types.h"
+#include "fileio.h"
 #include "engine.h"
 #include "parsing.h"
 #include "constants.h"
 
 int main(int argc, char **argv) {
-    wing_props wing = {
+    wing3d wing = {
         .airfoil = {-1},
         .semi_span = -1.0f,
         .root_chord = -1.0f,
@@ -63,7 +64,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    vec3 *pts = make_pts(&wing);
+    vec3d *pts = make_pts(&wing);
 
     if (pts == NULL) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for surface vertices\n");

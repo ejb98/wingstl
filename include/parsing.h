@@ -6,8 +6,10 @@
 #ifndef PARSING_H
 #define PARSING_H
 
+#include "types.h"
+
 int handle_chord_pts(int iarg, int num_args, char **args);
-int handle_inputs(int num_args, char **args, wing_props *wing);
+int handle_inputs(int num_args, char **args, wing3d *wing);
 
 float handle_semi_span(int iarg, int num_args, char **args);
 float handle_root_chord(int iarg, int num_args, char **args);

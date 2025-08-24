@@ -8,37 +8,29 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <float.h>
-#include <math.h>
 
 #include "types.h"
 
-size_t sub2ind(int i, int j, int num_cols);
-
+float get_aspect_ratio(const wing3d *wing);
 float get_camber(float x, float m, float p);
 float get_gradient(float x, float m, float p);
 float get_thickness(float x, float t, bool is_closed);
 float get_x_surf(float xc, float thickness, float theta, bool is_upper);
 float get_z_surf(float zc, float thickness, float theta, bool is_upper);
 
-void cross(const vec3 *a, const vec3 *b, vec3 *v);
-void subtract(const vec3 *a, const vec3 *b, vec3 *v);
-void normalize(vec3 *v);
+size_t get_num_pts(const wing3d *wing);
+size_t get_num_tris(const wing3d *wing);
+size_t get_upper_ind(const wing3d *wing, int i, int j);
+size_t get_lower_ind(const wing3d *wing, int i, int j);
 
-size_t get_num_pts(const wing_props *wing);
-size_t get_num_tris(const wing_props *wing);
-size_t get_upper_ind(const wing_props *wing, int i, int j);
-size_t get_lower_ind(const wing_props *wing, int i, int j);
+size_t fill_upper_lower_inds(const wing3d *wing, size_t k, size_t *inds);
+size_t fill_port_star_inds(const wing3d *wing, size_t k, size_t *inds);
+size_t fill_aft_inds(const wing3d *wing, size_t k, size_t *inds);
 
-size_t fill_upper_lower_inds(const wing_props *wing, size_t k, size_t *inds);
-size_t fill_port_star_inds(const wing_props *wing, size_t k, size_t *inds);
-size_t fill_aft_inds(const wing_props *wing, size_t k, size_t *inds);
+vec3d *make_pts(const wing3d *wing);
+size_t *make_inds(const wing3d *wing);
 
-vec3 *make_pts(const wing_props *wing);
-size_t *make_inds(const wing_props *wing);
-
-int write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *file_name);
+bool tip_overlaps(const wing3d *wing);
 
 #endif
 

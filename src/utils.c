@@ -5,7 +5,7 @@
 
 #include <math.h>
 #include <float.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
 #include "types.h"
 #include "constants.h"
@@ -14,23 +14,32 @@ float to_rads(float degrees) {
     return degrees * PI_OVER_180;
 }
 
-float get_aspect_ratio(const wing_props *wing) {
-    float b = 2.0f * wing->semi_span;
-    float dx_le = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[0]));
-    float dx_te = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[1]));
-    float s = 2.0f * wing->root_chord * wing->semi_span + wing->semi_span * (dx_te - dx_le);
-
-    return (s > FLT_EPSILON) ? b * b / s : 0.0f;
+size_t sub2ind(int i, int j, int num_cols) {
+    return (size_t) i * num_cols + j;
 }
 
-bool tip_overlaps(const wing_props *wing) {
-    float offsets[2];
+void cross(const vec3d *a, const vec3d *b, vec3d *v) {
+    v->x = a->y * b->z - a->z * b->y;
+    v->y = a->z * b->x - a->x * b->z;
+    v->z = a->x * b->y - a->y * b->x;
+}
 
-    for (int i = 0; i < 2; i++) {
-        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
+void subtract(const vec3d *a, const vec3d *b, vec3d *v) {
+    v->x = a->x - b->x;
+    v->y = a->y - b->y;
+    v->z = a->z - b->z;
+}
+
+void normalize(vec3d *v) {
+    float d = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
+
+    if (d <= FLT_EPSILON) {
+        return;
     }
 
-    return wing->root_chord + offsets[1] <= offsets[0];
+    v->x /= d;
+    v->y /= d;
+    v->z /= d;
 }
 
 /*

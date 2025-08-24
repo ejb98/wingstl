@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "utils.h"
 #include "types.h"
 #include "constants.h"
 
@@ -166,7 +165,7 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
     return sweep;
 }
 
-int handle_inputs(int num_args, char **args, wing_props *wing) {
+int handle_inputs(int num_args, char **args, wing3d *wing) {
     char *arg = NULL;
 
     for (int i = 1; i < num_args; i++) {

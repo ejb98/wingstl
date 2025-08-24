@@ -6,12 +6,14 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <stdbool.h>
+#include <stdlib.h>
 #include "types.h"
 
+size_t sub2ind(int i, int j, int num_cols);
 float to_rads(float degrees);
-float get_aspect_ratio(const wing_props *wing);
-bool tip_overlaps(const wing_props *wing);
+void cross(const vec3d *a, const vec3d *b, vec3d *v);
+void subtract(const vec3d *a, const vec3d *b, vec3d *v);
+void normalize(vec3d *v);
 
 #endif
 

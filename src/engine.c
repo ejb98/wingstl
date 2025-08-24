@@ -6,17 +6,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <stdio.h>
 #include <float.h>
 #include <math.h>
 
 #include "utils.h"
 #include "types.h"
 #include "constants.h"
-
-size_t sub2ind(int i, int j, int num_cols) {
-    return (size_t) i * num_cols + j;
-}
 
 float get_camber(float x, float m, float p) {
     float a = 2.0f * p * x - x * x;
@@ -62,35 +57,11 @@ float get_z_surf(float zc, float thickness, float theta, bool is_upper) {
     return zc + sign * thickness * cosf(theta);
 }
 
-void cross(const vec3 *a, const vec3 *b, vec3 *v) {
-    v->x = a->y * b->z - a->z * b->y;
-    v->y = a->z * b->x - a->x * b->z;
-    v->z = a->x * b->y - a->y * b->x;
-}
-
-void subtract(const vec3 *a, const vec3 *b, vec3 *v) {
-    v->x = a->x - b->x;
-    v->y = a->y - b->y;
-    v->z = a->z - b->z;
-}
-
-void normalize(vec3 *v) {
-    float d = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
-
-    if (d <= FLT_EPSILON) {
-        return;
-    }
-
-    v->x /= d;
-    v->y /= d;
-    v->z /= d;
-}
-
-size_t get_num_pts(const wing_props *wing) {
+size_t get_num_pts(const wing3d *wing) {
     return (size_t) wing->num_pts_span * (2 * wing->num_pts_chord - wing->has_closed_te - 1);
 }
 
-size_t get_num_tris(const wing_props *wing) {
+size_t get_num_tris(const wing3d *wing) {
     size_t num_tris_surf = (wing->num_pts_chord - 1) * (wing->num_pts_span - 1) * 2;
     size_t num_tris_side = 2 * wing->num_pts_chord - wing->has_closed_te - 3;
     size_t num_tris_aft = !wing->has_closed_te * (wing->num_pts_span - 1) * 2;
@@ -98,8 +69,8 @@ size_t get_num_tris(const wing_props *wing) {
     return 2 * (num_tris_surf + num_tris_side) + num_tris_aft;
 }
 
-vec3 *make_pts(const wing_props *wing) {
-    vec3 *pts = (vec3 *) malloc(get_num_pts(wing) * sizeof(vec3));
+vec3d *make_pts(const wing3d *wing) {
+    vec3d *pts = (vec3d *) malloc(get_num_pts(wing) * sizeof(vec3d));
 
     if (pts == NULL) {
         return NULL;
@@ -170,11 +141,11 @@ vec3 *make_pts(const wing_props *wing) {
     return pts;
 }
 
-size_t get_upper_ind(const wing_props *wing, int i, int j) {
+size_t get_upper_ind(const wing3d *wing, int i, int j) {
     return sub2ind(i, j, wing->num_pts_span);
 }
 
-size_t get_lower_ind(const wing_props *wing, int i, int j) {
+size_t get_lower_ind(const wing3d *wing, int i, int j) {
     bool is_last_row = (i == wing->num_pts_chord - 1);
 
     if (i == 0 || (is_last_row && wing->has_closed_te)) {
@@ -185,7 +156,7 @@ size_t get_lower_ind(const wing_props *wing, int i, int j) {
     return (size_t) wing->num_pts_chord * wing->num_pts_span + offset;
 }
 
-size_t fill_upper_lower_inds(const wing_props *wing, size_t k, size_t *inds) {
+size_t fill_upper_lower_inds(const wing3d *wing, size_t k, size_t *inds) {
     size_t corners[4];
 
     for (int is_upper = 1; is_upper >= 0; is_upper--) {
@@ -216,7 +187,7 @@ size_t fill_upper_lower_inds(const wing_props *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t fill_port_star_inds(const wing_props *wing, size_t k, size_t *inds) {
+size_t fill_port_star_inds(const wing3d *wing, size_t k, size_t *inds) {
     int j;
     bool is_last_row;
     size_t corners[4];
@@ -273,7 +244,7 @@ size_t fill_port_star_inds(const wing_props *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t fill_aft_inds(const wing_props *wing, size_t k, size_t *inds) {
+size_t fill_aft_inds(const wing3d *wing, size_t k, size_t *inds) {
     int i = wing->num_pts_chord - 1;
     size_t corners[4];
 
@@ -294,7 +265,7 @@ size_t fill_aft_inds(const wing_props *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t *make_inds(const wing_props *wing) {
+size_t *make_inds(const wing3d *wing) {
     size_t k = 0;
     size_t num_tris = get_num_tris(wing);
     size_t *inds = (size_t *) malloc(3 * num_tris * sizeof(size_t));
@@ -316,45 +287,23 @@ size_t *make_inds(const wing_props *wing) {
     return inds;
 }
 
-int write_stl(vec3 *pts, const size_t *indices, size_t num_tris, const char *file_name) {
-    FILE *fp = fopen(file_name, "w");
+float get_aspect_ratio(const wing3d *wing) {
+    float b = 2.0f * wing->semi_span;
+    float dx_le = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[0]));
+    float dx_te = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[1]));
+    float s = 2.0f * wing->root_chord * wing->semi_span + wing->semi_span * (dx_te - dx_le);
 
-    if (fp == NULL) {
-        return 1;
+    return (s > FLT_EPSILON) ? b * b / s : 0.0f;
+}
+
+bool tip_overlaps(const wing3d *wing) {
+    float offsets[2];
+
+    for (int i = 0; i < 2; i++) {
+        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
     }
 
-    size_t k = 0;
-
-    vec3 a, b, n;
-    vec3 *v0 = NULL;
-    vec3 *v1 = NULL;
-    vec3 *v2 = NULL;
-
-    fprintf(fp, "solid \n");
-
-    for (size_t i = 0; i < num_tris; i++) {
-        v0 = pts + indices[k++];
-        v1 = pts + indices[k++];
-        v2 = pts + indices[k++];
-
-        subtract(v1, v0, &a);
-        subtract(v2, v0, &b);
-        cross(&a, &b, &n);
-        normalize(&n);
-
-        fprintf(fp, "  facet normal %f %f %f\n", n.x, n.y, n.z);
-        fprintf(fp, "    outer loop\n");
-        fprintf(fp, "      vertex %f %f %f\n", v0->x, v0->y, v0->z);
-        fprintf(fp, "      vertex %f %f %f\n", v1->x, v1->y, v1->z);
-        fprintf(fp, "      vertex %f %f %f\n", v2->x, v2->y, v2->z);
-        fprintf(fp, "    endloop\n");
-        fprintf(fp, "  endfacet\n");
-    }
-
-    fprintf(fp, "endsolid ");
-    fclose(fp);
-
-    return 0;
+    return wing->root_chord + offsets[1] <= offsets[0];
 }
 
 /*

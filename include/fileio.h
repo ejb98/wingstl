@@ -3,32 +3,13 @@
  * License: GPLv3 (see end of file for full notice, or LICENSE file in repo)
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef FILEIO_H
+#define FILEIO_H
 
-#include <stdbool.h>
+#include <stdlib.h>
+#include "types.h"
 
-typedef struct vec3d {
-    float x, y, z;
-} vec3d;
-
-typedef struct naca4 {
-    int m, p, t;
-} naca4;
-
-typedef struct wing3d {
-    naca4 airfoil;
-    
-    int num_pts_span;
-    int num_pts_chord;
-
-    float semi_span;
-    float root_chord;
-    float sweep_angles[2];
-
-    bool has_closed_te;
-    bool has_cosine_spacing;
-} wing3d;
+int write_stl(vec3d *pts, const size_t *indices, size_t num_tris, const char *file_name);
 
 #endif
 
