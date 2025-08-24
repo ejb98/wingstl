@@ -15,45 +15,47 @@
 
 int main(int argc, char **argv) {
     wing_props wing = {
-        .airfoil = {.m = -1},
-        .semi_span = -1.0f,
-        .root_chord = -1.0f,
-        .sweep_angles = {MAX_SWEEP, MAX_SWEEP},
+        .airfoil = {2, 4, 12},
+        .semi_span = 6.0f,
+        .root_chord = 1.0f,
+        .sweep_angles = {80.0f, 85.0f},
         .num_pts_span = NUM_SPAN_PTS,
         .num_pts_chord = MIN_CHORD_PTS,
         .has_closed_te = HAS_CLOSED_TE,
         .has_cosine_spacing = HAS_COSINE_SPACING
     };
 
-    if (handle_inputs(argc, argv, &wing)) {
-        return 0;
-    }
+    printf("%f, %f\n", wing.sweep_angles[0], wing.sweep_angles[1]);
 
-    if (wing.airfoil.m < 0) {
-        fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
+    // if (handle_inputs(argc, argv, &wing)) {
+    //     return 0;
+    // }
 
-        return 0;
-    }
+    // if (wing.airfoil.m < 0) {
+    //     fprintf(stderr, "wingstl: error: please provide a four-digit number for the naca airfoil using flag '%s'\n", FLAG_AIRFOIL);
 
-    if (wing.semi_span < 0.0f) {
-        fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
+    //     return 0;
+    // }
+
+    // if (wing.semi_span < 0.0f) {
+    //     fprintf(stderr, "wingstl: error: please provide a value for the semi span using flag '%s'\n", FLAG_SEMI_SPAN);
         
-        return 0;
-    }
+    //     return 0;
+    // }
 
-    if (wing.root_chord < 0.0f) {
-        fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
+    // if (wing.root_chord < 0.0f) {
+    //     fprintf(stderr, "wingstl: error: please provide a value for the root chord using flag '%s'\n", FLAG_ROOT_CHORD);
         
-        return 0;
-    }
+    //     return 0;
+    // }
 
-    if (wing_tip_overlaps(&wing)) {
-        fprintf(stderr, "wingstl: error: wing tip overlap detected\n");
-        fprintf(stderr, "         try using a different value for '%s', '%s', or '%s'\n", 
-                                  FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN);
+    // if (wing_tip_overlaps(&wing)) {
+    //     fprintf(stderr, "wingstl: error: wing tip overlap detected\n");
+    //     fprintf(stderr, "         try using a different value for '%s', '%s', or '%s'\n", 
+    //                               FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN);
 
-        return 0;
-    }
+    //     return 0;
+    // }
 
     vec3 *pts = make_pts(&wing);
 

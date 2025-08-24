@@ -105,6 +105,7 @@ vec3 *make_pts(const wing_props *wing) {
         return NULL;
     }
     
+    float dx_te;
     float dx_le;
     float theta;
     float xn_surf;
@@ -126,7 +127,6 @@ vec3 *make_pts(const wing_props *wing) {
 
     float tan_le = tanf(to_rads(90.0f - wing->sweep_angles[0]));
     float tan_te = tanf(to_rads(90.0f - wing->sweep_angles[1]));
-    float tan_diff = tan_te - tan_le;
 
     size_t ind;
 
@@ -137,9 +137,10 @@ vec3 *make_pts(const wing_props *wing) {
         }
 
         for (int j = 0; j < num_cols; j++) {
-            dx_le = y_camber * tan_le;
             y_camber = wing->semi_span * j / (num_cols - 1);
-            local_chord = wing->root_chord + y_camber * tan_diff;
+            dx_te = y_camber * tan_te;
+            dx_le = y_camber * tan_le;
+            local_chord = wing->root_chord + dx_te - dx_le;
 
             for (int i = row_start; i < row_max; i++) {
                 if (is_upper) {

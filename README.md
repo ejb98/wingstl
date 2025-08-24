@@ -25,7 +25,7 @@ This project uses methods for geometry generation as described in the following 
 2. Katz, Joseph, and Allen Plotkin. Low-speed aerodynamics. Vol. 13. Cambridge university press, 2001.
 
 ## License
-Licensed under the GNU General Public License v3.0 or later (GPLv3+). See end of source file for details.
+Licensed under the GNU General Public License v3.0 or later (GPLv3+). See License file for details.
 
 ## Future Work
 This project is ongoing. Future work will involve adding various argument flags to allow more granular control over user input
