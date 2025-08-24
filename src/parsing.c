@@ -21,11 +21,6 @@ void request_nonzero_pos_num(const char *desc, const char *flag) {
     printf("wingstl: nonzero positive number required for %s (flag '%s')\n", desc, flag);
 }
 
-bool verbose_specified(int num_args, char **args) {
-
-    return false;
-}
-
 void request_n_digit_int(const char *desc, const char *flag, int n) {
     char noun[] = "digits";
     int len = strlen(noun);
