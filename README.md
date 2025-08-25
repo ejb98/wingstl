@@ -24,7 +24,7 @@ Generate an STL file for a swept wing given user-defined dimensions and NACA air
 | Option | Type | Default      | Description                                                                            |
 | ------ | ---- | ------------ | -------------------------------------------------------------------------------------- |
 | `-h`   | flag | *(n/a)*      | Show the help message and exit.                                                        |
-| `-v`   | flag | *(n/a)*      | Enable verbose output for detailed logging.                                            |
+| `-v`   | flag | *(n/a)*      | Enable verbose output.                                                                 |
 | `-p`   | INT  | `100`        | Number of coordinate points along the chord (higher = smoother STL, larger file size). |
 | `-a`   | STR  | *(required)* | NACA 4-digit airfoil code (e.g., `2412`, `0012`).                                      |
 | `-u`   | STR  | `"m"`        | Units for all dimensions (`m`, `cm`, `mm`, `ft`, or `in`).                             |
@@ -39,9 +39,9 @@ Generate a 6 m semi-span wing with a 1 m root chord using a NACA 2412 airfoil:
 ```bash
 wingstl -a 2412 -b 6 -c 1 -v -o planform.stl
 ```
-Generate a smaller wing in inches with a swept leading and trailing edge:
+Generate a smaller wing in feet with a swept leading and trailing edge:
 ```bash
-wingstl -a 1224 -b 3 -c 0.75 -u in -l 85 -t 85
+wingstl -a 1224 -b 3 -c 0.75 -u ft -l 85 -t 85
 
 ```
 ### Output
