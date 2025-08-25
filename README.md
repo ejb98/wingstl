@@ -15,6 +15,7 @@ This project is structured with `include` and `src` folders, and is not dependen
 ```bash
 clang -O2 -std=c99 src/*.c -Iinclude -o wingstl
 ```
+Note: also use `-lm` flag if building on Linux.
 
 ### Usage
 ```bash
