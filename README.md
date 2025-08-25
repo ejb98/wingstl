@@ -4,7 +4,6 @@
 It allows you to quickly define wing geometry and export it directly for use in CAD, slicing software, or CFD preprocessing.
 
 ![Alt text](images/wing.png)
-
 *Screenshot of example output STL model*
 
 ## Documentation
