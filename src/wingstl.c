@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 
     if (pts == NULL) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for vertices\n");
-        return 0;
+        return 1;
     }
 
     size_t *indices = make_indices(&wing);
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for triangle indices\n");
         free(pts);
 
-        return 0;
+        return 1;
     }
 
     bool write_failed = true;
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
         free(indices);
         free(pts);
 
-        return 0;
+        return 1;
     }
 
     if (settings.verbose) {
