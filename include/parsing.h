@@ -10,7 +10,7 @@
 
 void request_value(const char *desc, const char *flag);
 void request_nonzero_positive(const char *desc, const char *flag);
-void request_n_digit_integer(const char *desc, const char *flag, int n);
+void request_n_digits(const char *desc, const char *flag, int n);
 void request_bounded_integer(const char *desc, const char *flag, int val, const char *qualifier);
 
 int handle_chord_pts(int iarg, int num_args, char **args);

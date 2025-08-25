@@ -20,7 +20,7 @@ void show_help(void) {
     printf("  %s\t\tEnable verbose output\n", FLAG_VERBOSE);
     printf("  %s  INT\tNumber of points along the chord (default: %d)\n", FLAG_CHORD_PTS, DEFAULT_NUM_CHORD_PTS);
     printf("  %s  STR\tNACA 4-digit airfoil code (required)\n", FLAG_AIRFOIL);
-    printf("  %s  STR\tUnits (default: 'm')\n", FLAG_UNITS);
+    printf("  %s  STR\tUnits (default: '%s')\n", FLAG_UNITS, DEFAULT_UNITS);
     printf("  %s  STR\tOutput file name (default: '%s')\n", FLAG_OUTPUT, DEFAULT_OUTPUT);
     printf("  %s  REAL\tSemi span length (required)\n", FLAG_SEMI_SPAN);
     printf("  %s  REAL\tRoot chord length (required)\n", FLAG_ROOT_CHORD);

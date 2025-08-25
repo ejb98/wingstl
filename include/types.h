@@ -41,6 +41,7 @@ typedef struct Wing {
 } Wing;
 
 typedef struct Settings {
+    bool help;
     bool verbose;
     char *output;
 } Settings;

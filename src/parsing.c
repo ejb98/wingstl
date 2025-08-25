@@ -11,18 +11,17 @@
 
 #include "types.h"
 #include "utils.h"
-#include "messages.h"
 #include "constants.h"
 
 void request_value(const char *desc, const char *flag) {
-    printf("wingstl: value required for %s (flag '%s')\n", desc, flag);
+    fprintf(stderr, "wingstl: error: value required for %s (flag '%s')\n", desc, flag);
 }
 
 void request_nonzero_positive(const char *desc, const char *flag) {
-    printf("wingstl: nonzero positive number required for %s (flag '%s')\n", desc, flag);
+    fprintf(stderr, "wingstl: error: nonzero positive number required for %s (flag '%s')\n", desc, flag);
 }
 
-void request_n_digit_integer(const char *desc, const char *flag, int n) {
+void request_n_digits(const char *desc, const char *flag, int n) {
     char noun[] = "digits";
     int len = strlen(noun);
 
@@ -30,11 +29,11 @@ void request_n_digit_integer(const char *desc, const char *flag, int n) {
         noun[len - 1] = '\0';
     }
 
-    printf("wingstl: value for %s (flag '%s') must be an integer with exactly %d %s\n", desc, flag, n, noun);
+    fprintf(stderr, "wingstl: error: value for %s (flag '%s') must be a number with exactly %d %s\n", desc, flag, n, noun);
 }
 
 void request_bounded_integer(const char *desc, const char *flag, int val, const char *qualifier) {
-    printf("wingstl: value for %s (flag '%s') must be %d %s\n", desc, flag, val, qualifier);
+    fprintf(stderr, "wingstl: error: value for %s (flag '%s') must be %d %s\n", desc, flag, val, qualifier);
 }
 
 float handle_nonzero_positive(int iarg, int num_args, char **args, const char *desc, const char *flag) {
@@ -62,24 +61,18 @@ Units handle_units(int iarg, int num_args, char **args) {
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
 
-        if (strcmp(arg, "m") == 0) {
-            return METERS;
-        } else if (strcmp(arg, "cm") == 0) {
-            return CENTIMETERS;
-        } else if (strcmp(arg, "mm") == 0) {
-            return MILLIMETERS;
-        } else if (strcmp(arg, "ft") == 0) {
-            return FEET;
-        } else if (strcmp(arg, "in") == 0) {
-            return INCHES;
-        } else {
-            printf("wingstl: valid options for units (flag '%s') are: ", FLAG_UNITS);
-            printf("'m', 'cm', 'mm', 'ft' or 'in'\n");
+        units = to_units(arg);
+
+        if (units == INVALID) {
+            fprintf(stderr, "wingstl: error: valid options for units (flag '%s') are: ", FLAG_UNITS);
+            fprintf(stderr, "'m', 'cm', 'mm', 'ft' or 'in'\n");
+
             return INVALID;
         }
 
     } else {
         request_value("units", FLAG_UNITS);
+
         return INVALID;
     }
 
@@ -128,7 +121,15 @@ NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
         int num_digits = strlen(arg);
 
         if (num_digits != 4) {
-            request_n_digit_integer("naca airfoil", FLAG_AIRFOIL, 4);
+            request_n_digits("naca airfoil", FLAG_AIRFOIL, 4);
+            airfoil.m = -1;
+            return airfoil;
+        }
+
+        if (arg[2] == '0' && arg[3] == '0') {
+            fprintf(stderr, "wingstl: error: argument for flag '%s' will result in zero thickness;\n", FLAG_AIRFOIL);
+            fprintf(stderr, "                try increasing either of the last two digits of '%s'\n", arg);
+            fprintf(stderr, "                                                                   ^^");
             airfoil.m = -1;
             return airfoil;
         }
@@ -138,7 +139,7 @@ NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
             digit = arg[j];
 
             if (!isdigit(digit)) {
-                request_n_digit_integer("naca airfoil", FLAG_AIRFOIL, 4);
+                request_n_digits("naca airfoil", FLAG_AIRFOIL, 4);
                 airfoil.m = -1;
                 return airfoil;
             }
@@ -157,7 +158,7 @@ NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
                     airfoil.t = 10 * airfoil.t + to_integer(digit);
                     break;
                 default:
-                    request_n_digit_integer("naca airfoil", FLAG_AIRFOIL, 4);
+                    request_n_digits("naca airfoil", FLAG_AIRFOIL, 4);
                     airfoil.m = -1;
                     return airfoil;
             }
@@ -234,7 +235,7 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
 
 int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
     if (num_args == 1) {
-        printf("wingstl: missing required arguments; use flag ('%s') for help\n", FLAG_HELP);
+        fprintf(stderr, "wingstl: error: missing required arguments; use flag ('%s') for help\n", FLAG_HELP);
         return 1;
     }
 
@@ -244,7 +245,7 @@ int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
         arg = args[i];
 
         if (arg[0] != '-') {
-            printf("wingstl: argument flags must begin with a hyphen '-'\n");
+            fprintf(stderr, "wingstl: error: argument flags must begin with a hyphen '-'\n");
             return 1;
         }
 
@@ -252,7 +253,7 @@ int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
             settings->verbose = true;
 
         } else if (strcmp(arg, FLAG_HELP) == 0) {
-            show_help();
+            settings->help = true;
             return 1;
 
         } else if (strcmp(arg, FLAG_OUTPUT) == 0) {
@@ -288,7 +289,7 @@ int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
             if (wing->units == INVALID) { return 1; } else { i++; }
 
         } else {
-            printf("wingstl: unrecognized argument flag '%s'\n", arg);
+            fprintf(stderr, "wingstl: error: unrecognized argument flag '%s'\n", arg);
             return 1;
         }
     }

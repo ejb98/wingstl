@@ -10,12 +10,12 @@
 #include "constants.h"
 
 void suggest_adjust_values(void) {
-    printf("try adjusting values for '%s', '%s', '%s' or '%s'\n", 
+    fprintf(stderr, "try adjusting values for '%s', '%s', '%s' or '%s'\n", 
             FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD);
 }
 
 void suggest_flag_and_value(const char *desc, const char *flag) {
-    printf("wingstl: specify %s using the flag '%s' followed by a value\n", desc, flag);
+    fprintf(stderr, "wingstl: error: specify %s using the flag '%s' followed by a value\n", desc, flag);
 }
 
 int validate_props(const Wing *wing) {
@@ -35,14 +35,14 @@ int validate_props(const Wing *wing) {
     }
 
     if (wing->airfoil.t == 0) {
-        printf("wingstl: zero thickness wing detected; ");
-        printf("try increasing the third or fourth digit in the value for '%s'", FLAG_AIRFOIL);
+        fprintf(stderr, "wingstl: error: zero thickness wing detected; ");
+        fprintf(stderr, "try increasing the third or fourth digit in the value for '%s'", FLAG_AIRFOIL);
 
         return 1;
     }
 
     if (tip_overlap(wing)) {
-        printf("wingstl: wing tip overlap detected; ");
+        fprintf(stderr, "wingstl: error: wing tip overlap detected; ");
         suggest_adjust_values();
 
         return 1;
@@ -50,7 +50,7 @@ int validate_props(const Wing *wing) {
 
     float aspect_ratio = get_aspect_ratio(wing);
     if (aspect_ratio < MIN_ASPECT_RATIO || aspect_ratio > MAX_ASPECT_RATIO) {
-        printf("wingstl: extreme aspect ratio detected; ");
+        fprintf(stderr, "wingstl: error: extreme aspect ratio detected; ");
         suggest_adjust_values();
 
         return 1;

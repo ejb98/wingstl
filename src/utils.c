@@ -7,12 +7,29 @@
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "types.h"
 #include "constants.h"
 
 float to_radians(float degrees) {
     return degrees * PI_OVER_180;
+}
+
+Units to_units(const char *str) {
+    if (strcmp(str, "m") == 0) {
+        return METERS;
+    } else if (strcmp(str, "cm") == 0) {
+        return CENTIMETERS;
+    } else if (strcmp(str, "mm") == 0) {
+        return MILLIMETERS;
+    } else if (strcmp(str, "ft") == 0) {
+        return FEET;
+    } else if (strcmp(str, "in") == 0) {
+        return INCHES;
+    } else {
+        return INVALID;
+    }
 }
 
 float to_meters(float value, Units units) {

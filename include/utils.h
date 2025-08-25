@@ -12,6 +12,7 @@ size_t sub2ind(int i, int j, int num_cols);
 
 float to_meters(float value, Units units);
 float to_radians(float degrees);
+Units to_units(const char *str);
 
 int to_integer(char digit);
 

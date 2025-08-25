@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "utils.h"
 #include "types.h"
 #include "fileio.h"
 #include "engine.h"
@@ -16,7 +17,7 @@
 
 int main(int argc, char **argv) {
     Wing wing = {
-        .units = METERS,
+        .units = to_units(DEFAULT_UNITS),
         .airfoil = {DEFAULT_AIRFOIL},
         .semi_span = DEFAULT_SEMI_SPAN,
         .root_chord = DEFAULT_ROOT_CHORD,
@@ -27,14 +28,19 @@ int main(int argc, char **argv) {
         .has_cosine_spacing = DEFAULT_HAS_COSINE_SPACING
     };
 
-    Settings settings = {.verbose = false, .output = NULL};
+    Settings settings = {.verbose = false, .help = false, .output = NULL};
 
     if (handle_inputs(argc, argv, &wing, &settings)) {
-        return 0;
+        if (settings.help) {
+            show_help();
+            return 0;
+        }
+        
+        return 1;
     }
 
     if (validate_props(&wing)) {
-        return 0;
+        return 1;
     }
 
     Vec3D *pts = make_pts(&wing);

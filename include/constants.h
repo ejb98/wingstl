@@ -34,6 +34,7 @@
 #define FLAG_SEMI_SPAN "-b"
 #define FLAG_ROOT_CHORD "-c"
 
+#define DEFAULT_UNITS "m"
 #define DEFAULT_OUTPUT "wing.stl"
 #define DEFAULT_AIRFOIL -1
 #define DEFAULT_SWEEP_LE 90.0f
