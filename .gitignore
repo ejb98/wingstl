@@ -4,6 +4,7 @@
 *.txt
 *.pdf
 *.ps1
+*.zip
 
 misc/
 .vscode/

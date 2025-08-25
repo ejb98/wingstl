@@ -6,6 +6,9 @@ It allows you to quickly define wing geometry and export it directly for use in 
 ![Alt text](images/wing.png)
 *Screenshot of example output STL model*
 
+## Releases
+Precompiled binaries are available under the [Releases](https://github.com/ejb98/wingstl/releases/latest) section of this repository.
+
 ## Documentation
 ### Build Instructions
 This project is structured with `include` and `src` folders, and is not dependent on any third-party libraries. To build with `clang`:
