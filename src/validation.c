@@ -9,28 +9,28 @@
 #include "engine.h"
 #include "constants.h"
 
-void suggest_adjustments(void) {
+void suggest_adjust_values(void) {
     printf("try adjusting values for '%s', '%s', '%s' or '%s'\n", 
             FLAG_SWEEP_LE, FLAG_SWEEP_TE, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD);
 }
 
-void prompt_val(const char *desc, const char *flag) {
+void suggest_flag_and_value(const char *desc, const char *flag) {
     printf("wingstl: specify %s using the flag '%s' followed by a value\n", desc, flag);
 }
 
-int validate(const Wing *wing) {
+int validate_props(const Wing *wing) {
     if (wing->airfoil.m < 0) {
-        prompt_val("4-digit naca airfoil", FLAG_AIRFOIL);
+        suggest_flag_and_value("4-digit naca airfoil", FLAG_AIRFOIL);
         return 1;
     }
 
     if (wing->semi_span < 0.0f) {
-        prompt_val("semi span", FLAG_SEMI_SPAN);
+        suggest_flag_and_value("semi span", FLAG_SEMI_SPAN);
         return 1;
     }
 
     if (wing->root_chord < 0.0f) {
-        prompt_val("root chord", FLAG_ROOT_CHORD);
+        suggest_flag_and_value("root chord", FLAG_ROOT_CHORD);
         return 1;
     }
 
@@ -41,9 +41,9 @@ int validate(const Wing *wing) {
         return 1;
     }
 
-    if (tip_overlaps(wing)) {
+    if (tip_overlap(wing)) {
         printf("wingstl: wing tip overlap detected; ");
-        suggest_adjustments();
+        suggest_adjust_values();
 
         return 1;
     }
@@ -51,7 +51,7 @@ int validate(const Wing *wing) {
     float aspect_ratio = get_aspect_ratio(wing);
     if (aspect_ratio < MIN_ASPECT_RATIO || aspect_ratio > MAX_ASPECT_RATIO) {
         printf("wingstl: extreme aspect ratio detected; ");
-        suggest_adjustments();
+        suggest_adjust_values();
 
         return 1;
     }

@@ -27,13 +27,13 @@ int main(int argc, char **argv) {
         .has_cosine_spacing = DEFAULT_HAS_COSINE_SPACING
     };
 
-    Settings settings = {.verbose = false};
+    Settings settings = {.verbose = false, .output = NULL};
 
     if (handle_inputs(argc, argv, &wing, &settings)) {
         return 0;
     }
 
-    if (validate(&wing)) {
+    if (validate_props(&wing)) {
         return 0;
     }
 
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    size_t *indices = make_inds(&wing);
+    size_t *indices = make_indices(&wing);
 
     if (indices == NULL) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for triangle indices\n");
@@ -53,10 +53,18 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    char file_name[] = "wing.stl";
+    bool write_failed = true;
+    size_t num_tris = get_num_tris(&wing);
 
-    if (write_stl(pts, indices, get_num_tris(&wing), file_name)) {
+    if (settings.output == NULL) {
+        write_failed = write_stl(pts, indices, num_tris, DEFAULT_OUTPUT);
+    } else {
+        write_failed = write_stl(pts, indices, num_tris, settings.output);
+    }
+
+    if (write_failed) {
         fprintf(stderr, "wingstl: error: unable to open STL file for writing\n");
+        free(settings.output);
         free(indices);
         free(pts);
 
@@ -64,10 +72,11 @@ int main(int argc, char **argv) {
     }
 
     if (settings.verbose) {
-        printf("STL file '%s' written successfully\n\n", file_name);
-        show_wing_props(&wing);
+        printf("STL file written successfully\n\n");
+        show_props(&wing);
     }
     
+    free(settings.output);
     free(indices);
     free(pts);
 

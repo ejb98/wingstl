@@ -9,8 +9,8 @@
 #include "utils.h"
 #include "types.h"
 
-int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *file_name) {
-    FILE *fp = fopen(file_name, "w");
+int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname) {
+    FILE *fp = fopen(fname, "w");
 
     if (fp == NULL) {
         return 1;

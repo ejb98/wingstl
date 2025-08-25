@@ -8,9 +8,9 @@
 
 #include "types.h"
 
-void suggest_adjustments(void);
-void prompt_val(const char *desc, const char *flag);
-int validate(const Wing *wing);
+int validate_props(const Wing *wing);
+void suggest_adjust_values(void);
+void suggest_flag_and_value(const char *desc, const char *flag);
 
 #endif
 

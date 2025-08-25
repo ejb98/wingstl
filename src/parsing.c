@@ -10,18 +10,19 @@
 #include <ctype.h>
 
 #include "types.h"
+#include "utils.h"
 #include "messages.h"
 #include "constants.h"
 
-void request_val(const char *desc, const char *flag) {
+void request_value(const char *desc, const char *flag) {
     printf("wingstl: value required for %s (flag '%s')\n", desc, flag);
 }
 
-void request_nonzero_pos_num(const char *desc, const char *flag) {
+void request_nonzero_positive(const char *desc, const char *flag) {
     printf("wingstl: nonzero positive number required for %s (flag '%s')\n", desc, flag);
 }
 
-void request_n_digit_int(const char *desc, const char *flag, int n) {
+void request_n_digit_integer(const char *desc, const char *flag, int n) {
     char noun[] = "digits";
     int len = strlen(noun);
 
@@ -32,23 +33,23 @@ void request_n_digit_int(const char *desc, const char *flag, int n) {
     printf("wingstl: value for %s (flag '%s') must be an integer with exactly %d %s\n", desc, flag, n, noun);
 }
 
-void request_bounded_int(const char *desc, const char *flag, int val, const char *qualifier) {
+void request_bounded_integer(const char *desc, const char *flag, int val, const char *qualifier) {
     printf("wingstl: value for %s (flag '%s') must be %d %s\n", desc, flag, val, qualifier);
 }
 
-float handle_nonzero_pos_num(int iarg, int num_args, char **args, const char *desc, const char *flag) {
+float handle_nonzero_positive(int iarg, int num_args, char **args, const char *desc, const char *flag) {
     float value = -1.0f;
 
     if (iarg + 1 < num_args) {
         value = atof(args[iarg + 1]);
 
         if (value <= 0.0f) {
-            request_nonzero_pos_num(desc, flag);
+            request_nonzero_positive(desc, flag);
             return -1.0f;
         }
 
     } else {
-        request_val(desc, flag);
+        request_value(desc, flag);
         return -1.0f;
     }
 
@@ -78,11 +79,45 @@ Units handle_units(int iarg, int num_args, char **args) {
         }
 
     } else {
-        request_val("units", FLAG_UNITS);
+        request_value("units", FLAG_UNITS);
         return INVALID;
     }
 
     return units;
+}
+
+char *handle_output(int iarg, int num_args, char **args) {
+    char *output = NULL;
+
+    if (iarg + 1 < num_args) {
+        char *arg = args[iarg + 1];
+        int num_chars = strlen(arg);
+        char *last_four = arg + num_chars - 4;
+        bool has_ext = (strcmp(last_four, ".stl") == 0 || strcmp(last_four, ".STL") == 0);
+
+        if (!has_ext) {
+            num_chars += 4;
+        }
+
+        output = (char *) malloc((num_chars + 1) * sizeof(char));
+
+        if (output == NULL) {
+            fprintf(stderr, "wingstl: error: unable to allocate memory for file output\n");
+            return NULL;
+        }
+
+        if (has_ext) {
+            strcpy(output, arg);
+        } else {
+            sprintf(output, "%s.stl", arg);
+        }
+
+    } else {
+        request_value("output file", FLAG_OUTPUT);
+        return NULL;
+    }
+
+    return output;
 }
 
 NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
@@ -93,7 +128,7 @@ NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
         int num_digits = strlen(arg);
 
         if (num_digits != 4) {
-            request_n_digit_int("naca airfoil", FLAG_AIRFOIL, 4);
+            request_n_digit_integer("naca airfoil", FLAG_AIRFOIL, 4);
             airfoil.m = -1;
             return airfoil;
         }
@@ -103,33 +138,33 @@ NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
             digit = arg[j];
 
             if (!isdigit(digit)) {
-                request_n_digit_int("naca airfoil", FLAG_AIRFOIL, 4);
+                request_n_digit_integer("naca airfoil", FLAG_AIRFOIL, 4);
                 airfoil.m = -1;
                 return airfoil;
             }
 
             switch (j) {
                 case 0:
-                    airfoil.m = digit - '0';
+                    airfoil.m = to_integer(digit);
                     break;
                 case 1:
-                    airfoil.p = digit - '0';
+                    airfoil.p = to_integer(digit);
                     break;
                 case 2:
-                    airfoil.t = digit - '0';
+                    airfoil.t = to_integer(digit);
                     break;
                 case 3:
-                    airfoil.t = 10 * airfoil.t + (digit - '0');
+                    airfoil.t = 10 * airfoil.t + to_integer(digit);
                     break;
                 default:
-                    request_n_digit_int("naca airfoil", FLAG_AIRFOIL, 4);
+                    request_n_digit_integer("naca airfoil", FLAG_AIRFOIL, 4);
                     airfoil.m = -1;
                     return airfoil;
             }
         }
 
     } else {
-        request_val("naca 4-digit airfoil", FLAG_AIRFOIL);
+        request_value("naca 4-digit airfoil", FLAG_AIRFOIL);
         airfoil.m = -1;
         return airfoil;
     }
@@ -146,17 +181,17 @@ int handle_chord_pts(int iarg, int num_args, char **args) {
         num_pts = atoi(arg);
 
         if (num_pts < MIN_CHORD_PTS) {
-            request_bounded_int(desc, FLAG_CHORD_PTS, MIN_CHORD_PTS, "at least");
+            request_bounded_integer(desc, FLAG_CHORD_PTS, MIN_CHORD_PTS, "at least");
             return -1;
         }
 
         if (num_pts > MAX_CHORD_PTS) {
-            request_bounded_int(desc, FLAG_CHORD_PTS, MAX_CHORD_PTS, "at most");
+            request_bounded_integer(desc, FLAG_CHORD_PTS, MAX_CHORD_PTS, "at most");
             return -1;
         }
 
     } else {
-        request_val(desc, FLAG_CHORD_PTS);
+        request_value(desc, FLAG_CHORD_PTS);
         return -1;
     }
 
@@ -175,22 +210,22 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
         sweep = atof(arg);
 
         if (sweep <= 0.0f) {
-            request_nonzero_pos_num(desc, arg_flag);
+            request_nonzero_positive(desc, arg_flag);
             return -1.0f;
         }
 
         if (sweep < MIN_SWEEP) {
-            request_bounded_int(desc, arg_flag, MIN_SWEEP, "at least");
+            request_bounded_integer(desc, arg_flag, MIN_SWEEP, "at least");
             return -1.0f;
         }
 
         if (sweep > MAX_SWEEP) {
-            request_bounded_int(desc, arg_flag, MAX_SWEEP, "at most");
+            request_bounded_integer(desc, arg_flag, MAX_SWEEP, "at most");
             return -1.0f;
         }
 
     } else {
-        request_val(desc, arg_flag);
+        request_value(desc, arg_flag);
         return -1.0f;
     }
 
@@ -220,12 +255,16 @@ int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
             show_help();
             return 1;
 
+        } else if (strcmp(arg, FLAG_OUTPUT) == 0) {
+            settings->output = handle_output(i, num_args, args);
+            if (settings->output == NULL) { return 1; } else { i++; }
+
         } else if (strcmp(arg, FLAG_SEMI_SPAN) == 0) {
-            wing->semi_span = handle_nonzero_pos_num(i, num_args, args, "semi span", FLAG_SEMI_SPAN);
+            wing->semi_span = handle_nonzero_positive(i, num_args, args, "semi span", FLAG_SEMI_SPAN);
             if (wing->semi_span < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_ROOT_CHORD) == 0) {
-            wing->root_chord = handle_nonzero_pos_num(i, num_args, args, "root chord", FLAG_ROOT_CHORD);
+            wing->root_chord = handle_nonzero_positive(i, num_args, args, "root chord", FLAG_ROOT_CHORD);
             if (wing->root_chord < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_AIRFOIL) == 0) {

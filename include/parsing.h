@@ -8,15 +8,18 @@
 
 #include "types.h"
 
-void request_val(const char *desc, const char *flag);
-void request_nonzero_pos_num(const char *desc, const char *flag);
-void request_n_digit_int(const char *desc, const char *flag, int n);
-void request_bounded_int(const char *desc, const char *flag, int val, const char *qualifier);
+void request_value(const char *desc, const char *flag);
+void request_nonzero_positive(const char *desc, const char *flag);
+void request_n_digit_integer(const char *desc, const char *flag, int n);
+void request_bounded_integer(const char *desc, const char *flag, int val, const char *qualifier);
 
 int handle_chord_pts(int iarg, int num_args, char **args);
 int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings);
 
 float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag);
+float handle_nonzero_positive(int iarg, int num_args, char **args, const char *desc, const char *flag);
+
+char *handle_output(int iarg, int num_args, char **args);
 
 Units handle_units(int iarg, int num_args, char **args);
 NACA4Digit handle_airfoil(int iarg, int num_args, char **args);

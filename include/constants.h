@@ -25,14 +25,16 @@
 
 #define FLAG_HELP "-h"
 #define FLAG_UNITS "-u"
+#define FLAG_OUTPUT "-o"
 #define FLAG_AIRFOIL "-a"
 #define FLAG_VERBOSE "-v"
-#define FLAG_SWEEP_LE "-le"
-#define FLAG_SWEEP_TE "-te"
+#define FLAG_SWEEP_LE "-l"
+#define FLAG_SWEEP_TE "-t"
 #define FLAG_CHORD_PTS "-p"
 #define FLAG_SEMI_SPAN "-b"
 #define FLAG_ROOT_CHORD "-c"
 
+#define DEFAULT_OUTPUT "wing.stl"
 #define DEFAULT_AIRFOIL -1
 #define DEFAULT_SWEEP_LE 90.0f
 #define DEFAULT_SWEEP_TE 90.0f

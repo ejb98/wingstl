@@ -9,7 +9,7 @@
 #include "types.h"
 
 void show_help(void);
-void show_wing_props(const Wing *wing);
+void show_props(const Wing *wing);
 
 #endif
 

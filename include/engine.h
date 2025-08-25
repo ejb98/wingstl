@@ -11,27 +11,27 @@
 
 #include "types.h"
 
-float get_surf_area(const Wing *wing);
+float get_surface_area(const Wing *wing);
 float get_aspect_ratio(const Wing *wing);
 float get_camber(float x, float m, float p);
 float get_gradient(float x, float m, float p);
 float get_thickness(float x, float t, bool is_closed);
-float get_x_surf(float xc, float thickness, float theta, bool is_upper);
-float get_z_surf(float zc, float thickness, float theta, bool is_upper);
+float get_x_surface(float xc, float thickness, float theta, bool is_upper);
+float get_z_surface(float zc, float thickness, float theta, bool is_upper);
 
 size_t get_num_pts(const Wing *wing);
 size_t get_num_tris(const Wing *wing);
-size_t get_upper_ind(const Wing *wing, int i, int j);
-size_t get_lower_ind(const Wing *wing, int i, int j);
+size_t get_upper_index(const Wing *wing, int i, int j);
+size_t get_lower_index(const Wing *wing, int i, int j);
 
-size_t fill_upper_lower_inds(const Wing *wing, size_t k, size_t *inds);
-size_t fill_port_star_inds(const Wing *wing, size_t k, size_t *inds);
-size_t fill_aft_inds(const Wing *wing, size_t k, size_t *inds);
+size_t fill_upper_lower_indices(const Wing *wing, size_t k, size_t *inds);
+size_t fill_port_star_indices(const Wing *wing, size_t k, size_t *inds);
+size_t fill_aft_indices(const Wing *wing, size_t k, size_t *inds);
 
 Vec3D *make_pts(const Wing *wing);
-size_t *make_inds(const Wing *wing);
+size_t *make_indices(const Wing *wing);
 
-bool tip_overlaps(const Wing *wing);
+bool tip_overlap(const Wing *wing);
 
 #endif
 

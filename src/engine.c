@@ -45,13 +45,13 @@ float get_thickness(float x, float t, bool is_closed) {
             A3 * x2 * x + a4 * x2 * x2) * t / 0.2f;
 }
 
-float get_x_surf(float xc, float thickness, float theta, bool is_upper) {
+float get_x_surface(float xc, float thickness, float theta, bool is_upper) {
     float sign = is_upper ? -1.0f : 1.0f;
 
     return xc + sign * thickness * sinf(theta);
 }
 
-float get_z_surf(float zc, float thickness, float theta, bool is_upper) {
+float get_z_surface(float zc, float thickness, float theta, bool is_upper) {
     float sign = is_upper ? 1.0f : -1.0f;
 
     return zc + sign * thickness * cosf(theta);
@@ -95,8 +95,8 @@ Vec3D *make_pts(const Wing *wing) {
     float m = wing->airfoil.m / 100.0f;
     float p = wing->airfoil.p / 10.0f;
     float t = wing->airfoil.t / 100.0f;
-    float tan_le = tanf(to_rads(90.0f - wing->sweep_angles[0]));
-    float tan_te = tanf(to_rads(90.0f - wing->sweep_angles[1]));
+    float tan_le = tanf(to_radians(90.0f - wing->sweep_angles[0]));
+    float tan_te = tanf(to_radians(90.0f - wing->sweep_angles[1]));
 
     size_t ind;
 
@@ -128,8 +128,8 @@ Vec3D *make_pts(const Wing *wing) {
                 theta = get_gradient(xn_camber, m, p);
                 thickness = get_thickness(xn_camber, t, wing->has_closed_te);
                 zn_camber = get_camber(xn_camber, m, p);
-                zn_surf = get_z_surf(zn_camber, thickness, theta, is_upper);
-                xn_surf = get_x_surf(xn_camber, thickness, theta, is_upper);
+                zn_surf = get_z_surface(zn_camber, thickness, theta, is_upper);
+                xn_surf = get_x_surface(xn_camber, thickness, theta, is_upper);
 
                 pts[ind].y = to_meters(y_camber, wing->units);
                 pts[ind].z = to_meters(zn_surf * local_chord, wing->units);
@@ -141,11 +141,11 @@ Vec3D *make_pts(const Wing *wing) {
     return pts;
 }
 
-size_t get_upper_ind(const Wing *wing, int i, int j) {
+size_t get_upper_index(const Wing *wing, int i, int j) {
     return sub2ind(i, j, wing->num_pts_span);
 }
 
-size_t get_lower_ind(const Wing *wing, int i, int j) {
+size_t get_lower_index(const Wing *wing, int i, int j) {
     bool is_last_row = (i == wing->num_pts_chord - 1);
 
     if (i == 0 || (is_last_row && wing->has_closed_te)) {
@@ -156,22 +156,22 @@ size_t get_lower_ind(const Wing *wing, int i, int j) {
     return (size_t) wing->num_pts_chord * wing->num_pts_span + offset;
 }
 
-size_t fill_upper_lower_inds(const Wing *wing, size_t k, size_t *inds) {
+size_t fill_upper_lower_indices(const Wing *wing, size_t k, size_t *inds) {
     size_t corners[4];
 
     for (int is_upper = 1; is_upper >= 0; is_upper--) {
         for (int i = 0; i < wing->num_pts_chord - 1; i++) {
             for (int j = 0; j < wing->num_pts_span - 1; j++) {
                 if (is_upper) {
-                    corners[0] = get_upper_ind(wing, i, j);
-                    corners[1] = get_upper_ind(wing, i, j + 1);
-                    corners[2] = get_upper_ind(wing, i + 1, j + 1);
-                    corners[3] = get_upper_ind(wing, i + 1, j);
+                    corners[0] = get_upper_index(wing, i, j);
+                    corners[1] = get_upper_index(wing, i, j + 1);
+                    corners[2] = get_upper_index(wing, i + 1, j + 1);
+                    corners[3] = get_upper_index(wing, i + 1, j);
                 } else {
-                    corners[0] = get_lower_ind(wing, i, j + 1);
-                    corners[1] = get_lower_ind(wing, i, j);
-                    corners[2] = get_lower_ind(wing, i + 1, j);
-                    corners[3] = get_lower_ind(wing, i + 1, j + 1);
+                    corners[0] = get_lower_index(wing, i, j + 1);
+                    corners[1] = get_lower_index(wing, i, j);
+                    corners[2] = get_lower_index(wing, i + 1, j);
+                    corners[3] = get_lower_index(wing, i + 1, j + 1);
                 }
 
                 inds[k++] = corners[3];
@@ -187,7 +187,7 @@ size_t fill_upper_lower_inds(const Wing *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t fill_port_star_inds(const Wing *wing, size_t k, size_t *inds) {
+size_t fill_port_star_indices(const Wing *wing, size_t k, size_t *inds) {
     int j;
     bool is_last_row;
     size_t corners[4];
@@ -199,36 +199,36 @@ size_t fill_port_star_inds(const Wing *wing, size_t k, size_t *inds) {
             is_last_row = (i == wing->num_pts_chord - 2);
 
             if (i == 0) {
-                inds[k++] = get_upper_ind(wing, i, j);
+                inds[k++] = get_upper_index(wing, i, j);
 
                 if (is_port) {
-                    inds[k++] = get_lower_ind(wing, i + 1, j);
-                    inds[k++] = get_upper_ind(wing, i + 1, j);
+                    inds[k++] = get_lower_index(wing, i + 1, j);
+                    inds[k++] = get_upper_index(wing, i + 1, j);
                 } else {
-                    inds[k++] = get_upper_ind(wing, i + 1, j);
-                    inds[k++] = get_lower_ind(wing, i + 1, j);
+                    inds[k++] = get_upper_index(wing, i + 1, j);
+                    inds[k++] = get_lower_index(wing, i + 1, j);
                 }
             } else if (is_last_row && wing->has_closed_te) {
-                inds[k++] = get_lower_ind(wing, i + 1, j);
+                inds[k++] = get_lower_index(wing, i + 1, j);
 
                 if (is_port) {
-                    inds[k++] = get_upper_ind(wing, i, j);
-                    inds[k++] = get_lower_ind(wing, i, j);
+                    inds[k++] = get_upper_index(wing, i, j);
+                    inds[k++] = get_lower_index(wing, i, j);
                 } else {
-                    inds[k++] = get_lower_ind(wing, i, j);
-                    inds[k++] = get_upper_ind(wing, i, j);
+                    inds[k++] = get_lower_index(wing, i, j);
+                    inds[k++] = get_upper_index(wing, i, j);
                 }
             } else {
                 if (is_port) {
-                    corners[0] = get_lower_ind(wing, i, j);
-                    corners[1] = get_lower_ind(wing, i + 1, j);
-                    corners[2] = get_upper_ind(wing, i + 1, j);
-                    corners[3] = get_upper_ind(wing, i, j);
+                    corners[0] = get_lower_index(wing, i, j);
+                    corners[1] = get_lower_index(wing, i + 1, j);
+                    corners[2] = get_upper_index(wing, i + 1, j);
+                    corners[3] = get_upper_index(wing, i, j);
                 } else {
-                    corners[0] = get_lower_ind(wing, i + 1, j);
-                    corners[1] = get_lower_ind(wing, i, j);
-                    corners[2] = get_upper_ind(wing, i, j);
-                    corners[3] = get_upper_ind(wing, i + 1, j);
+                    corners[0] = get_lower_index(wing, i + 1, j);
+                    corners[1] = get_lower_index(wing, i, j);
+                    corners[2] = get_upper_index(wing, i, j);
+                    corners[3] = get_upper_index(wing, i + 1, j);
                 }
 
                 inds[k++] = corners[0];
@@ -244,15 +244,15 @@ size_t fill_port_star_inds(const Wing *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t fill_aft_inds(const Wing *wing, size_t k, size_t *inds) {
+size_t fill_aft_indices(const Wing *wing, size_t k, size_t *inds) {
     int i = wing->num_pts_chord - 1;
     size_t corners[4];
 
     for (int j = 0; j < wing->num_pts_span - 1; j++) {
-        corners[0] = get_lower_ind(wing, i, j);
-        corners[1] = get_lower_ind(wing, i, j + 1);
-        corners[2] = get_upper_ind(wing, i, j + 1);
-        corners[3] = get_upper_ind(wing, i, j);
+        corners[0] = get_lower_index(wing, i, j);
+        corners[1] = get_lower_index(wing, i, j + 1);
+        corners[2] = get_upper_index(wing, i, j + 1);
+        corners[3] = get_upper_index(wing, i, j);
 
         inds[k++] = corners[0];
         inds[k++] = corners[1];
@@ -265,47 +265,47 @@ size_t fill_aft_inds(const Wing *wing, size_t k, size_t *inds) {
     return k;
 }
 
-size_t *make_inds(const Wing *wing) {
+size_t *make_indices(const Wing *wing) {
     size_t k = 0;
     size_t num_tris = get_num_tris(wing);
-    size_t *inds = (size_t *) malloc(3 * num_tris * sizeof(size_t));
+    size_t *indices = (size_t *) malloc(3 * num_tris * sizeof(size_t));
 
-    if (inds == NULL) {
+    if (indices == NULL) {
         return NULL;
     }
 
-    k = fill_upper_lower_inds(wing, k, inds);
-    k = fill_port_star_inds(wing, k, inds);
+    k = fill_upper_lower_indices(wing, k, indices);
+    k = fill_port_star_indices(wing, k, indices);
 
     if (!wing->has_closed_te) {
-        k = fill_aft_inds(wing, k, inds);
+        k = fill_aft_indices(wing, k, indices);
     }
 
     size_t num_tris_created = k / 3;
     assert(num_tris_created == num_tris);
 
-    return inds;
+    return indices;
 }
 
-float get_surf_area(const Wing *wing) {
-    float dx_le = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[0]));
-    float dx_te = wing->semi_span * tanf(to_rads(90.0f - wing->sweep_angles[1]));
+float get_surface_area(const Wing *wing) {
+    float dx_le = wing->semi_span * tanf(to_radians(90.0f - wing->sweep_angles[0]));
+    float dx_te = wing->semi_span * tanf(to_radians(90.0f - wing->sweep_angles[1]));
     
     return 2.0f * wing->root_chord * wing->semi_span + wing->semi_span * (dx_te - dx_le);
 }
 
 float get_aspect_ratio(const Wing *wing) {
-    float s = get_surf_area(wing);
+    float s = get_surface_area(wing);
     float b = 2.0f * wing->semi_span;
 
     return (s > FLT_EPSILON) ? b * b / s : 0.0f;
 }
 
-bool tip_overlaps(const Wing *wing) {
+bool tip_overlap(const Wing *wing) {
     float offsets[2];
 
     for (int i = 0; i < 2; i++) {
-        offsets[i] = wing->semi_span * (to_rads(90.0f - wing->sweep_angles[i]));
+        offsets[i] = wing->semi_span * (to_radians(90.0f - wing->sweep_angles[i]));
     }
 
     return wing->root_chord + offsets[1] <= offsets[0];

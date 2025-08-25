@@ -11,7 +11,7 @@
 #include "types.h"
 #include "constants.h"
 
-float to_rads(float degrees) {
+float to_radians(float degrees) {
     return degrees * PI_OVER_180;
 }
 
@@ -34,6 +34,10 @@ float to_meters(float value, Units units) {
             fprintf(stderr, "wingstl: warning: value cannot be converted to meters\n");
             return value;
     }
+}
+
+int to_integer(char digit) {
+    return digit - '0';
 }
 
 size_t sub2ind(int i, int j, int num_cols) {

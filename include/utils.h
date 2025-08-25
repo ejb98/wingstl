@@ -10,8 +10,10 @@
 
 size_t sub2ind(int i, int j, int num_cols);
 
-float to_rads(float degrees);
 float to_meters(float value, Units units);
+float to_radians(float degrees);
+
+int to_integer(char digit);
 
 void cross(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
