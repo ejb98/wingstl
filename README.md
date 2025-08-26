@@ -1,8 +1,8 @@
 # wingstl
-## Overview
 `wingstl` is a lightweight command-line tool for generating 3D-printable STL files of swept wings based on NACA 4-digit airfoils.
 It allows you to quickly define wing geometry and export it directly for use in CAD, slicing software, or CFD preprocessing.
 
+## Example Output
 ![Alt text](images/wing.png)
 *Screenshot of example output STL model*
 
