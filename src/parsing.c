@@ -129,7 +129,7 @@ NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
         if (arg[2] == '0' && arg[3] == '0') {
             fprintf(stderr, "wingstl: error: argument for flag '%s' will result in zero thickness;\n", FLAG_AIRFOIL);
             fprintf(stderr, "                try increasing either of the last two digits of '%s'\n", arg);
-            fprintf(stderr, "                                                                   ^^");
+            fprintf(stderr, "                                                                   ^^\n");
             airfoil.m = -1;
             return airfoil;
         }
