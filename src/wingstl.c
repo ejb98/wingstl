@@ -16,6 +16,14 @@
 #include "validation.h"
 
 int main(int argc, char **argv) {
+    Airfoil airfoil;
+    FileError dat_error = read_dat("n2414.dat", &airfoil);
+
+    if (dat_error) {
+        print_file_error(dat_error);
+        return 1;
+    }
+
     Wing wing = {
         .units = to_units(DEFAULT_UNITS),
         .airfoil = {DEFAULT_AIRFOIL},

@@ -6,6 +6,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdbool.h>
 #include "types.h"
 
 size_t sub2ind(int i, int j, int num_cols);
@@ -16,10 +17,10 @@ Units to_units(const char *str);
 
 int to_integer(char digit);
 
+void rstrip(char *line);
 void cross(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void normalize(Vec3D *v);
-void trim_trailing_whitespace(char *line);
 
 #endif
 

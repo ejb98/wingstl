@@ -5,7 +5,6 @@
 
 #include <math.h>
 #include <ctype.h>
-#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,7 +17,7 @@ float to_radians(float degrees) {
     return degrees * PI_OVER_180;
 }
 
-void trim_trailing_whitespace(char *line) {
+void rstrip(char *line) {
     size_t len = strlen(line);
 
     while (len > 0 && isspace((unsigned char) line[len - 1])) {
@@ -87,13 +86,11 @@ void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v) {
 void normalize(Vec3D *v) {
     float d = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
 
-    if (d <= FLT_EPSILON) {
-        return;
+    if (d > METERS_PER_MICROMETER) {
+        v->x /= d;
+        v->y /= d;
+        v->z /= d;
     }
-
-    v->x /= d;
-    v->y /= d;
-    v->z /= d;
 }
 
 /*

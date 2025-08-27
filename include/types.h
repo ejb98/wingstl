@@ -7,6 +7,7 @@
 #define TYPES_H
 
 #include <stdbool.h>
+#include "constants.h"
 
 typedef struct Vec3D {
     float x, y, z;
@@ -60,15 +61,12 @@ typedef struct Settings {
     char *output;
 } Settings;
 
-typedef struct Curve2D {
-    int num_pts;
-    Vec2D *pts;
-} Curve2D;
-
 typedef struct Airfoil {
-    char *label;
-    Curve2D upper_pts;
-    Curve2D lower_pts;
+    int num_pts;
+    int lednicer_index;
+    char label[MAX_LINE];
+    Vec2D pts[MAX_AIRFOIL_PTS];
+    bool has_closed_te;
 } Airfoil;
 
 #endif

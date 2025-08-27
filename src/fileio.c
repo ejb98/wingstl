@@ -3,6 +3,7 @@
  * License: GPLv3 (see end of file for full notice, or LICENSE file in repo)
  */
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,54 +40,101 @@ void print_file_error(FileError error) {
     }
 }
 
-FileError read_dat(const char *fname) {
+FileError read_dat(const char *fname, Airfoil *airfoil) {
     FILE *fp = fopen(fname, "r");
 
     if (fp == NULL) {
         return READ_ERROR;
     }
 
-    int num_pts = 0;
-    char line[MAX_LINE_LEN];
+    airfoil->num_pts = 0;
+    airfoil->lednicer_index = 0;
+
+    char line[MAX_LINE];
+
+    bool last_line_empty = false;
+    bool point_counts_found = false;
 
     float x;
     float y;
 
-    float pts_x[MAX_DAT_FILE_PTS];
-    float pts_y[MAX_DAT_FILE_PTS];
-
-    if (fgets(line, sizeof(line), fp) != NULL) {
-        trim_trailing_whitespace(line);
-        printf("Airfoil name: %s\n", line);
+    if (fgets(airfoil->label, sizeof(airfoil->label), fp) != NULL) {
+        rstrip(airfoil->label);
     } else {
         fclose(fp);
         return EMPTY_ERROR;
     }
 
     while (fgets(line, sizeof(line), fp) != NULL) {
-        if (strlen(line) <= 1) continue;
+        rstrip(line);
+
+        if (strlen(line) == 0) {
+            last_line_empty = true;
+            continue;
+        }
 
         if (sscanf(line, "%f %f", &x, &y) == 2) {
-            if (num_pts < MAX_DAT_FILE_PTS) {
-                pts_x[num_pts] = x;
-                pts_y[num_pts] = y;
+            if (x > 2.0f && y > 2.0f && airfoil->num_pts == 0) {
+                if (point_counts_found) {
+                    return FORMAT_ERROR;
+                }
 
-                num_pts++;
+                point_counts_found = true;
+                continue;
+            }
+
+            if (airfoil->num_pts < MAX_AIRFOIL_PTS) {
+                airfoil->pts[airfoil->num_pts].x = x;
+                airfoil->pts[airfoil->num_pts].y = y;
+
+                if (airfoil->num_pts > 1 && last_line_empty) {
+                    if (airfoil->lednicer_index > 0) {
+                        return FORMAT_ERROR;
+                    }
+
+                    airfoil->lednicer_index = airfoil->num_pts;
+                }
+
+                airfoil->num_pts++;
+
             } else {
                 fclose(fp);
                 return SIZE_ERROR;
             }
+
         } else {
             fclose(fp);
             return FORMAT_ERROR;
         }
+
+        last_line_empty = false;
     }
 
     fclose(fp);
-    printf("Read %d %s:\n", num_pts, (num_pts == 1 ? "point" : "points"));
 
-    for (int i = 0; i < num_pts; i++) {
-        printf("Point %d: (%f, %f)\n", i + 1, pts_x[i], pts_y[i]);
+    Vec2D te_upper;
+    Vec2D te_lower;
+
+    if (airfoil->lednicer_index) {
+        te_upper = airfoil->pts[airfoil->lednicer_index - 1];
+    } else {
+        te_upper = airfoil->pts[0];
+    }
+
+    te_lower = airfoil->pts[airfoil->num_pts - 1];
+    airfoil->has_closed_te = (fabs(te_upper.y - te_lower.y) < METERS_PER_MICROMETER) ||
+                                 ((te_upper.x - te_lower.x) > METERS_PER_MICROMETER);
+
+
+    if (SHOW_DAT_FILE_CONTENTS) {
+        printf("Read %d %s:\n", airfoil->num_pts, (airfoil->num_pts == 1 ? "point" : "points"));
+        printf("%s\n", airfoil->label);
+        printf("Format: %s (%d)\n", airfoil->lednicer_index ? "Lednicer" : "Selig", airfoil->lednicer_index);
+        printf("Trailing Edge: %s\n", airfoil->has_closed_te ? "Closed" : "Open");
+
+        for (int i = 0; i < airfoil->num_pts; i++) {
+            printf("Point %d: (%f, %f)\n", i, airfoil->pts[i].x, airfoil->pts[i].y);
+        }
     }
 
     return NO_ERROR;
