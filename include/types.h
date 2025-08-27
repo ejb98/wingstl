@@ -66,7 +66,6 @@ typedef struct Airfoil {
     int lednicer_index;
     char label[MAX_LINE];
     Vec2D pts[MAX_AIRFOIL_PTS];
-    bool has_closed_te;
 } Airfoil;
 
 #endif
