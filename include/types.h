@@ -60,12 +60,16 @@ typedef struct Settings {
     char *output;
 } Settings;
 
-typedef struct DatFile {
-    char *label;
+typedef struct Curve2D {
     int num_pts;
     Vec2D *pts;
-    bool is_lednicer_format;
-} DatFile;
+} Curve2D;
+
+typedef struct Airfoil {
+    char *label;
+    Curve2D upper_pts;
+    Curve2D lower_pts;
+} Airfoil;
 
 #endif
 
