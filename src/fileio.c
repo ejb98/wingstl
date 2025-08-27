@@ -56,9 +56,7 @@ FileError read_dat(const char *fname) {
     float pts_y[MAX_DAT_FILE_PTS];
 
     if (fgets(line, sizeof(line), fp) != NULL) {
-        convert_win_return(line);
         trim_trailing_whitespace(line);
-
         printf("Airfoil name: %s\n", line);
     } else {
         fclose(fp);

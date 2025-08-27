@@ -27,10 +27,6 @@ void trim_trailing_whitespace(char *line) {
     }
 }
 
-void convert_win_return(char *line) {
-    line[strcspn(line, "\r\n")] = '\0';
-}
-
 Units to_units(const char *str) {
     if (strcmp(str, "m") == 0) {
         return METERS;
