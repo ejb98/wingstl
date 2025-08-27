@@ -59,17 +59,17 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    bool write_failed = true;
+    FileError stl_error;
     size_t num_tris = get_num_tris(&wing);
 
     if (settings.output == NULL) {
-        write_failed = write_stl(pts, indices, num_tris, DEFAULT_OUTPUT);
+        stl_error = write_stl(pts, indices, num_tris, DEFAULT_OUTPUT);
     } else {
-        write_failed = write_stl(pts, indices, num_tris, settings.output);
+        stl_error = write_stl(pts, indices, num_tris, settings.output);
     }
 
-    if (write_failed) {
-        fprintf(stderr, "wingstl: error: unable to open STL file for writing\n");
+    if (stl_error) {
+        print_file_error(stl_error);
         free(settings.output);
         free(indices);
         free(pts);

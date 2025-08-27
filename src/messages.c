@@ -55,7 +55,7 @@ void show_props(const Wing *wing) {
         case INCHES:
             strcpy(units, "in");
             break;
-        case INVALID:
+        case UNKNOWN_UNITS:
             strcpy(units, "units");
             break;
         default:

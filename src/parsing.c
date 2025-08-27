@@ -56,24 +56,24 @@ float handle_nonzero_positive(int iarg, int num_args, char **args, const char *d
 }
 
 Units handle_units(int iarg, int num_args, char **args) {
-    Units units = INVALID;
+    Units units = UNKNOWN_UNITS;
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
 
         units = to_units(arg);
 
-        if (units == INVALID) {
+        if (units == UNKNOWN_UNITS) {
             fprintf(stderr, "wingstl: error: valid options for units (flag '%s') are: ", FLAG_UNITS);
             fprintf(stderr, "'m', 'cm', 'mm', 'ft' or 'in'\n");
 
-            return INVALID;
+            return UNKNOWN_UNITS;
         }
 
     } else {
         request_value("units", FLAG_UNITS);
 
-        return INVALID;
+        return UNKNOWN_UNITS;
     }
 
     return units;
@@ -286,7 +286,7 @@ int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
 
         } else if (strcmp(arg, FLAG_UNITS) == 0) {
             wing->units = handle_units(i, num_args, args);
-            if (wing->units == INVALID) { return 1; } else { i++; }
+            if (wing->units == UNKNOWN_UNITS) { return 1; } else { i++; }
 
         } else {
             fprintf(stderr, "wingstl: error: unrecognized argument flag '%s'\n", arg);

@@ -18,8 +18,10 @@
 
 #define MIN_SWEEP 1
 #define MAX_SWEEP 179
+#define MAX_LINE_LEN 256
 #define MIN_CHORD_PTS 20
 #define MAX_CHORD_PTS 200
+#define MAX_DAT_FILE_PTS 1000
 #define MIN_ASPECT_RATIO 1.0f
 #define MAX_ASPECT_RATIO 100.0f
 

@@ -22,8 +22,18 @@ typedef enum Units {
     METERS,
     CENTIMETERS,
     MILLIMETERS,
-    INVALID
+    UNKNOWN_UNITS
 } Units;
+
+typedef enum FileError {
+    NO_ERROR,
+    SIZE_ERROR,
+    READ_ERROR,
+    WRITE_ERROR,
+    EMPTY_ERROR,
+    FORMAT_ERROR,
+    UNKNOWN_ERROR
+} FileError;
 
 typedef struct Wing {
     Units units;

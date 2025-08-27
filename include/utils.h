@@ -19,6 +19,8 @@ int to_integer(char digit);
 void cross(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void normalize(Vec3D *v);
+void convert_win_return(char *line);
+void trim_trailing_whitespace(char *line);
 
 #endif
 

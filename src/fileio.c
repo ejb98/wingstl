@@ -4,16 +4,101 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "utils.h"
 #include "types.h"
+#include "constants.h"
 
-int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname) {
+void print_file_error(FileError error) {
+    switch (error) {
+        case NO_ERROR:
+            return;
+        case WRITE_ERROR:
+            fprintf(stderr, "wingstl: error: unable to open file for writing\n");
+            return;
+        case READ_ERROR:
+            fprintf(stderr, "wingstl: error: unable to open file for reading\n");
+            return;
+        case FORMAT_ERROR:
+            fprintf(stderr, "wingstl: error: file is not formatted correctly\n");
+            return;
+        case EMPTY_ERROR:
+            fprintf(stderr, "wingstl: error: file is empty\n");
+            return;
+        case SIZE_ERROR:
+            fprintf(stderr, "wingstl: error: file is too large\n");
+            return;
+        case UNKNOWN_ERROR:
+            fprintf(stderr, "wingstl: error: unable to process file\n");
+            return;
+        default:
+            fprintf(stderr, "wingstl: error: unable to process file\n");
+            return;
+    }
+}
+
+FileError read_dat(const char *fname) {
+    FILE *fp = fopen(fname, "r");
+
+    if (fp == NULL) {
+        return READ_ERROR;
+    }
+
+    int num_pts = 0;
+    char line[MAX_LINE_LEN];
+
+    float x;
+    float y;
+
+    float pts_x[MAX_DAT_FILE_PTS];
+    float pts_y[MAX_DAT_FILE_PTS];
+
+    if (fgets(line, sizeof(line), fp) != NULL) {
+        convert_win_return(line);
+        trim_trailing_whitespace(line);
+
+        printf("Airfoil name: %s\n", line);
+    } else {
+        fclose(fp);
+        return EMPTY_ERROR;
+    }
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (strlen(line) <= 1) continue;
+
+        if (sscanf(line, "%f %f", &x, &y) == 2) {
+            if (num_pts < MAX_DAT_FILE_PTS) {
+                pts_x[num_pts] = x;
+                pts_y[num_pts] = y;
+
+                num_pts++;
+            } else {
+                fclose(fp);
+                return SIZE_ERROR;
+            }
+        } else {
+            fclose(fp);
+            return FORMAT_ERROR;
+        }
+    }
+
+    fclose(fp);
+    printf("Read %d %s:\n", num_pts, (num_pts == 1 ? "point" : "points"));
+
+    for (int i = 0; i < num_pts; i++) {
+        printf("Point %d: (%f, %f)\n", i + 1, pts_x[i], pts_y[i]);
+    }
+
+    return NO_ERROR;
+}
+
+FileError write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname) {
     FILE *fp = fopen(fname, "w");
 
     if (fp == NULL) {
-        return 1;
+        return WRITE_ERROR;
     }
 
     size_t k = 0;
@@ -47,7 +132,7 @@ int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fn
     fprintf(fp, "endsolid ");
     fclose(fp);
 
-    return 0;
+    return NO_ERROR;
 }
 
 /*

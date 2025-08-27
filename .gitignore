@@ -5,6 +5,7 @@
 *.pdf
 *.ps1
 *.zip
+*.dat
 wingstl
 misc/
 .vscode/

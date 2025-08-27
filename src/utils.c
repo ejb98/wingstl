@@ -4,16 +4,31 @@
  */
 
 #include <math.h>
+#include <ctype.h>
 #include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "types.h"
 #include "constants.h"
 
 float to_radians(float degrees) {
     return degrees * PI_OVER_180;
+}
+
+void trim_trailing_whitespace(char *line) {
+    size_t len = strlen(line);
+
+    while (len > 0 && isspace((unsigned char) line[len - 1])) {
+        line[len - 1] = '\0';
+        len--;
+    }
+}
+
+void convert_win_return(char *line) {
+    line[strcspn(line, "\r\n")] = '\0';
 }
 
 Units to_units(const char *str) {
@@ -28,7 +43,7 @@ Units to_units(const char *str) {
     } else if (strcmp(str, "in") == 0) {
         return INCHES;
     } else {
-        return INVALID;
+        return UNKNOWN_UNITS;
     }
 }
 
@@ -44,7 +59,7 @@ float to_meters(float value, Units units) {
             return value / 100.0f;
         case MILLIMETERS:
             return value / 1000.0f;
-        case INVALID:
+        case UNKNOWN_UNITS:
             fprintf(stderr, "wingstl: warning: value cannot be converted to meters\n");
             return value;
         default:
