@@ -12,6 +12,10 @@ typedef struct Vec3D {
     float x, y, z;
 } Vec3D;
 
+typedef struct Vec2D {
+    float x, y;
+} Vec2D;
+
 typedef struct NACA4Digit {
     int m, p, t;
 } NACA4Digit;
@@ -55,6 +59,13 @@ typedef struct Settings {
     bool verbose;
     char *output;
 } Settings;
+
+typedef struct DatFile {
+    char *label;
+    int num_pts;
+    Vec2D *pts;
+    bool is_lednicer_format;
+} DatFile;
 
 #endif
 
