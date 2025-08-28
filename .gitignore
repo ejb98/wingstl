@@ -6,6 +6,7 @@
 *.ps1
 *.zip
 *.dat
+dat_reader.c
 wingstl
 misc/
 .vscode/
