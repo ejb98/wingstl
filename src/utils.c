@@ -4,7 +4,6 @@
  */
 
 #include <math.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,15 +14,6 @@
 
 float to_radians(float degrees) {
     return degrees * PI_OVER_180;
-}
-
-void rstrip(char *line) {
-    size_t len = strlen(line);
-
-    while (len > 0 && isspace((unsigned char) line[len - 1])) {
-        line[len - 1] = '\0';
-        len--;
-    }
 }
 
 Units to_units(const char *str) {
