@@ -17,6 +17,7 @@ Units to_units(const char *str);
 
 int to_integer(char digit);
 
+void rstrip(char *line);
 void cross(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void normalize(Vec3D *v);

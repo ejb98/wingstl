@@ -5,43 +5,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
 #include "utils.h"
 #include "types.h"
 
-void print_file_error(FileError error) {
-    switch (error) {
-        case NO_ERROR:
-            return;
-        case WRITE_ERROR:
-            fprintf(stderr, "wingstl: error: unable to open file for writing\n");
-            return;
-        case READ_ERROR:
-            fprintf(stderr, "wingstl: error: unable to open file for reading\n");
-            return;
-        case FORMAT_ERROR:
-            fprintf(stderr, "wingstl: error: file is not formatted correctly\n");
-            return;
-        case EMPTY_ERROR:
-            fprintf(stderr, "wingstl: error: file is empty\n");
-            return;
-        case SIZE_ERROR:
-            fprintf(stderr, "wingstl: error: file is too large\n");
-            return;
-        case UNKNOWN_ERROR:
-            fprintf(stderr, "wingstl: error: unable to process file\n");
-            return;
-        default:
-            fprintf(stderr, "wingstl: error: unable to process file\n");
-            return;
-    }
-}
-
-FileError write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname) {
+int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname) {
     FILE *fp = fopen(fname, "w");
 
     if (fp == NULL) {
-        return WRITE_ERROR;
+        fprintf(stderr, "wingstl: error: unable to open .stl file for writing\n");
+        return 1;
     }
 
     size_t k = 0;
@@ -75,7 +50,131 @@ FileError write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const ch
     fprintf(fp, "endsolid ");
     fclose(fp);
 
-    return NO_ERROR;
+    return 0;
+}
+
+LineResult parse_line(const char *line, bool first_line, float *x, float *y) {
+    if (first_line) {
+        return !strlen(line) ? EMPTY_HEADER_LINE : VALID_HEADER_LINE;
+    }
+
+    if (!strlen(line)) {
+        return EMPTY_BODY_LINE;
+    }
+
+    int num_values = sscanf(line, "%f %f", x, y);
+    if (num_values != 2) {
+        return INVALID_FORMAT_LINE;
+    }
+
+    if (*x > 1.0f && *y > 1.0f) {
+        return POINT_QUANTITY_LINE;
+    }
+
+    return VALUE_LINE;
+}
+
+int read_dat(const char *fname, AirfoilData *data) {
+    FILE *f = fopen(fname, "r");
+
+    if (f == NULL) {
+        fprintf(stderr, "wingstl: error: unable to open .dat file for reading\n");
+        return 1;
+    }
+
+    int line_no = 1;
+    int num_mid_breaks = 0;
+    char line[MAX_LINE];
+    float x, y;
+
+    LineResult result;
+    LineResult last_result;
+    bool has_quantity_line = false;
+    bool has_break_before_first_point = false;
+
+    data->num_pts = 0;
+    while (fgets(line, sizeof(line), f) != NULL) {
+        rstrip(line);
+        result = parse_line(line, (line_no == 1), &x, &y);
+
+        switch (result) {
+            case VALID_HEADER_LINE:
+                strcpy(data->header, line);
+                break;
+            case EMPTY_HEADER_LINE:
+                fprintf(stderr, "wingstl: error: .dat file does not contain a header on the first line\n");
+                fclose(f);
+                return 1;
+            case INVALID_FORMAT_LINE:
+                fprintf(stderr, "wingstl: error: line %d of .dat file is not formatted correctly\n", line_no);
+                fclose(f);
+                return 1;
+            case EMPTY_BODY_LINE:
+                break;
+            case VALUE_LINE:
+                if (data->num_pts == MAX_AIRFOIL_PTS) {
+                    fprintf(stderr, "wingstl: error: .dat file contains too many points\n");
+                    fclose(f);
+                    return 1;
+                }
+
+                data->pts[data->num_pts].x = x;
+                data->pts[data->num_pts].y = y;
+
+                num_mid_breaks += (last_result == EMPTY_BODY_LINE && data->num_pts > 0);
+                if (num_mid_breaks > 1) {
+                    fprintf(stderr, "wingstl: error: redundant middle break on line %d of .dat file\n", line_no - 1);
+                    fclose(f);
+                    return 1;
+                }
+
+                data->num_pts++;
+                if (data->num_pts == 1) {
+                    has_break_before_first_point = (last_result == EMPTY_BODY_LINE);
+                }
+
+                break;
+            case POINT_QUANTITY_LINE:
+                if (has_quantity_line) {
+                    fprintf(stderr, "wingstl: error: redundant quantity of points provided on line %d\n of .dat file", line_no);
+                    fclose(f);
+                    return 1;
+                }
+
+                has_quantity_line = true;
+                break;
+            default:
+                fprintf(stderr, "wingstl: error: unable to parse line %d of .dat file\n", line_no);
+                fclose(f);
+                return 1;
+        }
+
+        line_no++;
+        last_result = result;
+    }
+
+    if (data->num_pts < MIN_AIRFOIL_PTS) {
+        fprintf(stderr, "wingstl: error: .dat file contains less than minimum of %d points\n", MIN_AIRFOIL_PTS);
+        fclose(f);
+        return 1;
+    }
+
+    if (has_quantity_line && num_mid_breaks == 0) {
+        fprintf(stderr, "wingstl: error: .dat file contains line for quantity of points but no middle break\n");
+        fclose(f);
+        return 1;
+    }
+
+    if (num_mid_breaks == 1 && !has_break_before_first_point) {
+        fprintf(stderr, "wingstl: error: .dat file has middle break but no break before the first point\n");
+        fclose(f);
+        return 1;
+    }
+
+    data->is_lednicer_fmt = (num_mid_breaks > 0);
+
+    fclose(f);
+    return 0;
 }
 
 /*

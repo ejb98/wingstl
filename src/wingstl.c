@@ -16,6 +16,11 @@
 #include "validation.h"
 
 int main(int argc, char **argv) {
+    AirfoilData data;
+    if (read_dat("s1223_lednicer.dat", &data)) {
+        return 1;
+    }
+
     Wing wing = {
         .units = to_units(DEFAULT_UNITS),
         .airfoil = {DEFAULT_AIRFOIL},
@@ -58,10 +63,9 @@ int main(int argc, char **argv) {
 
         return 1;
     }
-
-    FileError stl_error;
     size_t num_tris = get_num_tris(&wing);
 
+    int stl_error;
     if (settings.output == NULL) {
         stl_error = write_stl(pts, indices, num_tris, DEFAULT_OUTPUT);
     } else {
@@ -69,7 +73,6 @@ int main(int argc, char **argv) {
     }
 
     if (stl_error) {
-        print_file_error(stl_error);
         free(settings.output);
         free(indices);
         free(pts);

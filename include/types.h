@@ -9,6 +9,10 @@
 #include <stdbool.h>
 #include "constants.h"
 
+typedef struct Vec2D {
+    float x, y;
+} Vec2D;
+
 typedef struct Vec3D {
     float x, y, z;
 } Vec3D;
@@ -26,15 +30,14 @@ typedef enum Units {
     UNKNOWN_UNITS
 } Units;
 
-typedef enum FileError {
-    NO_ERROR,
-    SIZE_ERROR,
-    READ_ERROR,
-    WRITE_ERROR,
-    EMPTY_ERROR,
-    FORMAT_ERROR,
-    UNKNOWN_ERROR
-} FileError;
+typedef enum LineResult {
+    VALUE_LINE,
+    EMPTY_BODY_LINE,
+    EMPTY_HEADER_LINE,
+    VALID_HEADER_LINE,
+    POINT_QUANTITY_LINE,
+    INVALID_FORMAT_LINE
+} LineResult;
 
 typedef struct Wing {
     Units units;
@@ -56,6 +59,13 @@ typedef struct Settings {
     bool verbose;
     char *output;
 } Settings;
+
+typedef struct AirfoilData {
+    int num_pts;
+    char header[MAX_LINE];
+    bool is_lednicer_fmt;
+    Vec2D pts[MAX_AIRFOIL_PTS];
+} AirfoilData;
 
 #endif
 
