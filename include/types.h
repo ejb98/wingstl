@@ -13,10 +13,6 @@ typedef struct Vec3D {
     float x, y, z;
 } Vec3D;
 
-typedef struct Vec2D {
-    float x, y;
-} Vec2D;
-
 typedef struct NACA4Digit {
     int m, p, t;
 } NACA4Digit;
@@ -60,13 +56,6 @@ typedef struct Settings {
     bool verbose;
     char *output;
 } Settings;
-
-typedef struct Airfoil {
-    int num_pts;
-    int lednicer_index;
-    char label[MAX_LINE];
-    Vec2D pts[MAX_AIRFOIL_PTS];
-} Airfoil;
 
 #endif
 

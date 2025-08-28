@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include "types.h"
 
-FileError read_dat(const char *fname, Airfoil *airfoil);
 FileError write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname);
 void print_file_error(FileError error);
 
