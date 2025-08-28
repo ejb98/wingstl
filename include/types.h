@@ -62,8 +62,8 @@ typedef struct Settings {
 
 typedef struct AirfoilData {
     int num_pts;
+    int lednicer_index;
     char header[MAX_LINE];
-    bool is_lednicer_fmt;
     Vec2D pts[MAX_AIRFOIL_PTS];
 } AirfoilData;
 

@@ -6,9 +6,13 @@
 #ifndef VALIDATION_H
 #define VALIDATION_H
 
+#include <stdbool.h>
 #include "types.h"
 
 int validate_props(const Wing *wing);
+int validate_file(int num_mid_breaks, int num_quantity_lines, int line_no_invalid,
+                  bool has_break_before_p0, bool has_empty_header); 
+
 void suggest_adjust_values(void);
 void suggest_flag_and_value(const char *desc, const char *flag);
 
