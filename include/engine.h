@@ -18,6 +18,10 @@ float get_gradient(float x, float m, float p);
 float get_thickness(float x, float t, bool is_closed);
 float get_x_surface(float xc, float thickness, float theta, bool is_upper);
 float get_z_surface(float zc, float thickness, float theta, bool is_upper);
+float get_z_upper_selig(float xc, AirfoilData *airfoil);
+float get_z_lower_selig(float xc, AirfoilData *airfoil);
+float get_z_upper_lednicer(float xc, AirfoilData *airfoil);
+float get_z_lower_lednicer(float xc, AirfoilData *airfoil);
 
 size_t get_num_pts(const Wing *wing);
 size_t get_num_tris(const Wing *wing);

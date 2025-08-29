@@ -9,12 +9,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "types.h"
 #include "constants.h"
 
 float to_radians(float degrees) {
     return degrees * PI_OVER_180;
+}
+
+float interp(Vec2D *p0, Vec2D *p2, float x) {
+    return p0->y + (p2->y - p0->y) * (x - p0->x) / (p2->x - p0->x); 
 }
 
 void rstrip(char *line) {
@@ -24,6 +29,10 @@ void rstrip(char *line) {
         line[length - 1] = '\0';
         length--;
     }
+}
+
+bool is_appx(float a, float b) {
+    return fabs(a - b) < METERS_PER_MICROMETER;
 }
 
 Units to_units(const char *str) {

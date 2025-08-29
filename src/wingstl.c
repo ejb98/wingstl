@@ -16,11 +16,6 @@
 #include "validation.h"
 
 int main(int argc, char **argv) {
-    AirfoilData data;
-    if (read_dat("s1223_lednicer.dat", &data)) {
-        return 1;
-    }
-
     Wing wing = {
         .units = to_units(DEFAULT_UNITS),
         .airfoil = {DEFAULT_AIRFOIL},

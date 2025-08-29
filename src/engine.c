@@ -6,12 +6,127 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 #include <float.h>
 #include <math.h>
 
 #include "utils.h"
 #include "types.h"
+#include "fileio.h"
+#include "engine.h"
 #include "constants.h"
+
+float get_z_upper_selig(float xc, AirfoilData *airfoil) {
+    float x;
+
+    for (int i = 0; i < airfoil->num_pts; i++) {
+        x = airfoil->pts[i].x;
+
+        if (is_appx(x, xc)) {
+            return airfoil->pts[i].y;
+        }
+
+        if (x < xc) {
+            return interp(airfoil->pts + i, airfoil->pts + i - 1, xc);
+        }
+    }
+
+    return 0.0f;
+}
+
+float get_z_lower_selig(float xc, AirfoilData *airfoil) {
+    int ifinal = airfoil->num_pts - 1;
+    bool missing_point = !is_appx(airfoil->pts[0].x, airfoil->pts[ifinal].x);
+
+    if (missing_point && is_appx(airfoil->pts[0].x, xc)) {
+        return airfoil->pts[0].y;
+    }
+
+    float x;
+
+    for (int i = airfoil->num_pts - 1; i >= 0; i--) {
+        x = airfoil->pts[i].x;
+
+        if (is_appx(x, xc)) {
+            return airfoil->pts[i].y;
+        }
+
+        if (x < xc) {
+            if (missing_point && i == ifinal) {
+                return interp(airfoil->pts + i, airfoil->pts, xc);
+            }
+
+            return interp(airfoil->pts + i, airfoil->pts + i + 1, xc);
+        }
+    }
+
+    return 0.0f;
+}
+
+float get_z_upper_lednicer(float xc, AirfoilData *airfoil) {
+    float x;
+
+    for (int i = 0; i < airfoil->lednicer_index; i++) {
+        x = airfoil->pts[i].x;
+
+        if (is_appx(x, xc)) {
+            return airfoil->pts[i].y;
+        }
+
+        if (x > xc) {
+            if (i == 0) {
+                float x_lower;
+
+                for (int j = airfoil->lednicer_index; j < airfoil->num_pts; j++) {
+                    x_lower = airfoil->pts[j].x;
+
+                    if (is_appx(x_lower, xc)) {
+                        return airfoil->pts[j].y;
+                    }
+
+                    if (x_lower < xc) {
+                        return interp(airfoil->pts + j, airfoil->pts + j - 1, xc);
+                    }
+                }
+            }
+
+            return interp(airfoil->pts + i - 1, airfoil->pts + i, xc);
+        }
+    }
+
+    return 0.0f;
+}
+
+float get_z_lower_lednicer(float xc, AirfoilData *airfoil) {
+    int ifinal = airfoil->num_pts - 1;
+    int iupper_te = airfoil->lednicer_index - 1;
+
+    bool missing_point = !is_appx(airfoil->pts[iupper_te].x, airfoil->pts[ifinal].x);
+
+    if (missing_point && is_appx(airfoil->pts[iupper_te].x, xc)) {
+        return airfoil->pts[iupper_te].y;
+    }
+
+    float x;
+
+    for (int i = ifinal; i > iupper_te; i--) {
+        x = airfoil->pts[i].x;
+
+        if (is_appx(x, xc)) {
+            return airfoil->pts[i].y;
+        }
+
+        if (x < xc) {
+            if (missing_point && i == ifinal) {
+                return interp(airfoil->pts + i, airfoil->pts + iupper_te, xc);
+            }
+
+            return interp(airfoil->pts + i, airfoil->pts + i + 1, xc);
+        }
+    }
+
+    return 0.0f;
+}
 
 float get_camber(float x, float m, float p) {
     float a = 2.0f * p * x - x * x;
@@ -75,16 +190,22 @@ Vec3D *make_pts(const Wing *wing) {
     if (pts == NULL) {
         return NULL;
     }
+
+    AirfoilData data;
+    if (read_dat("s1223_lednicer.dat", &data)) {
+        fprintf(stderr, "wingstl: error: unable to load airfoil data from .dat file\n");
+        return NULL;
+    }
     
     float dx_te;
     float dx_le;
-    float theta;
+    // float theta;
     float xn_surf;
     float zn_surf;
     float y_camber;
     float xn_camber;
-    float zn_camber;
-    float thickness;
+    // float zn_camber;
+    // float thickness;
     float local_chord;
 
     int row_max = wing->num_pts_chord;
@@ -92,9 +213,9 @@ Vec3D *make_pts(const Wing *wing) {
     int num_cols = wing->num_pts_span;
     int row_start = 0;
 
-    float m = wing->airfoil.m / 100.0f;
-    float p = wing->airfoil.p / 10.0f;
-    float t = wing->airfoil.t / 100.0f;
+    // float m = wing->airfoil.m / 100.0f;
+    // float p = wing->airfoil.p / 10.0f;
+    // float t = wing->airfoil.t / 100.0f;
     float tan_le = tanf(to_radians(90.0f - wing->sweep_angles[0]));
     float tan_te = tanf(to_radians(90.0f - wing->sweep_angles[1]));
 
@@ -125,11 +246,18 @@ Vec3D *make_pts(const Wing *wing) {
                     xn_camber = (1.0f - cosf(xn_camber * PI)) / 2.0f;
                 }
 
-                theta = get_gradient(xn_camber, m, p);
-                thickness = get_thickness(xn_camber, t, wing->has_closed_te);
-                zn_camber = get_camber(xn_camber, m, p);
-                zn_surf = get_z_surface(zn_camber, thickness, theta, is_upper);
-                xn_surf = get_x_surface(xn_camber, thickness, theta, is_upper);
+                // theta = get_gradient(xn_camber, m, p);
+                // thickness = get_thickness(xn_camber, t, wing->has_closed_te);
+                // zn_camber = get_camber(xn_camber, m, p);
+                // zn_surf = get_z_surface(zn_camber, thickness, theta, is_upper);
+                // xn_surf = get_x_surface(xn_camber, thickness, theta, is_upper);
+                xn_surf = xn_camber;
+
+                if (is_upper) {
+                    zn_surf = get_z_upper_lednicer(xn_camber, &data);
+                } else {
+                    zn_surf = get_z_lower_lednicer(xn_camber, &data);
+                }
 
                 pts[ind].y = to_meters(y_camber, wing->units);
                 pts[ind].z = to_meters(zn_surf * local_chord, wing->units);

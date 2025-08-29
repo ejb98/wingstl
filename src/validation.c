@@ -60,36 +60,36 @@ int validate_props(const Wing *wing) {
     return 0;
 }
 
-int validate_file(int num_mid_breaks, int num_quantity_lines, int line_no_invalid,
-                  bool has_break_before_p0, bool has_empty_header) {
+int validate_file(int num_breaks, int num_quantity, int num_invalid,
+                        bool has_break_b4_p0, bool has_empty_header) {
     if (has_empty_header) {
         fprintf(stderr, "wingstl: error: .dat file does not contain a header on the first line\n");
         return 1;
     }
 
-    if (line_no_invalid > 0) {
-        fprintf(stderr, "wingstl: error: line %d of .dat file is not formatted correctly\n", line_no_invalid);
+    if (num_invalid > 0) {
+        fprintf(stderr, "wingstl: error: line %d of .dat file is not formatted correctly\n", num_invalid);
         return 1;
     }
 
-    if (num_mid_breaks > 1) {
+    if (num_breaks > 1) {
         fprintf(stderr, "wingstl: error: .dat file contains multiple line breaks between points\n");
         return 1;
     }
 
-    if (num_quantity_lines > 1) {
+    if (num_quantity > 1) {
         fprintf(stderr, "wingstl: error: .dat file contains multiple lines with point quantities\n");
         return 1;
     }
 
-    if (num_quantity_lines == 1 && num_mid_breaks == 0) {
+    if (num_quantity == 1 && num_breaks == 0) {
         fprintf(stderr, "wingstl: error: .dat file contains a line with point quantities");
         fprintf(stderr, "but does not contains a middle line break between points\n");
 
         return 1;
     }
 
-    if (num_mid_breaks == 1 && !has_break_before_p0) {
+    if (num_breaks == 1 && !has_break_b4_p0) {
         fprintf(stderr, "wingstl: error: .dat file contains a line break between points");
         fprintf(stderr, "but does not contains a line break before the first point\n");
 

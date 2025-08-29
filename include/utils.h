@@ -11,6 +11,8 @@
 
 size_t sub2ind(int i, int j, int num_cols);
 
+float interp(Vec2D *p0, Vec2D *p2, float x);
+
 float to_meters(float value, Units units);
 float to_radians(float degrees);
 Units to_units(const char *str);
@@ -21,6 +23,8 @@ void rstrip(char *line);
 void cross(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void normalize(Vec3D *v);
+
+bool is_appx(float a, float b);
 
 #endif
 

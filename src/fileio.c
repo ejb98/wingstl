@@ -84,18 +84,20 @@ int read_dat(const char *fname, AirfoilData *data) {
     }
 
     int line_no = 1;
-    int line_no_invalid = 0;
-    int num_mid_breaks = 0;
-    int num_quantity_lines = 0;
+    int num_invalid = 0;
+    int num_breaks = 0;
+    int num_quantity = 0;
 
+    float xmin;
+    float xmax;
     float x, y;
     char line[MAX_LINE];
 
     LineResult result;
     LineResult last_result;
 
+    bool has_break_b4_p0 = false;
     bool has_empty_header = false;
-    bool has_break_before_p0 = false;
 
     data->num_pts = 0;
 
@@ -111,7 +113,7 @@ int read_dat(const char *fname, AirfoilData *data) {
                 has_empty_header = true;
                 break;
             case INVALID_FORMAT_LINE:
-                line_no_invalid = line_no;
+                num_invalid = line_no;
                 break;
             case EMPTY_BODY_LINE:
                 break;
@@ -126,18 +128,26 @@ int read_dat(const char *fname, AirfoilData *data) {
                 data->pts[data->num_pts].y = y;
 
                 if (last_result == EMPTY_BODY_LINE && data->num_pts > 0) {
-                    num_mid_breaks += 1;
+                    num_breaks += 1;
                     data->lednicer_index = data->num_pts;
                 }
 
                 data->num_pts++;
                 if (data->num_pts == 1) {
-                    has_break_before_p0 = (last_result == EMPTY_BODY_LINE);
+                    has_break_b4_p0 = (last_result == EMPTY_BODY_LINE);
+                }
+
+                if (data->num_pts == 1) {
+                    xmin = x;
+                    xmax = x;
+                } else {
+                    xmin = (x < xmin) ? x : xmin;
+                    xmax = (x > xmax) ? x : xmax;
                 }
 
                 break;
             case POINT_QUANTITY_LINE:
-                num_quantity_lines += 1;
+                num_quantity += 1;
                 break;
             default:
                 fprintf(stderr, "wingstl: error: unable to parse line %d of .dat file\n", line_no);
@@ -149,10 +159,17 @@ int read_dat(const char *fname, AirfoilData *data) {
         last_result = result;
     }
 
-    if (validate_file(num_mid_breaks, num_quantity_lines, line_no_invalid,
-                      has_break_before_p0, has_empty_header)) {
+    if (validate_file(num_breaks, num_quantity, num_invalid, has_break_b4_p0, has_empty_header)) {
         fclose(f);
         return 1;
+    }
+
+    float chord = xmax - xmin;
+    float divisor = (chord > METERS_PER_MICROMETER) ? chord : 1.0f;
+    
+    for (int i = 0; i < data->num_pts; i++) {
+        data->pts[i].x = (data->pts[i].x - xmin)/divisor;
+        data->pts[i].y /= divisor;
     }
 
     fclose(f);
