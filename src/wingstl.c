@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (validate_props(&settings)) {
+    if (validate_settings(&settings)) {
         return 1;
     }
 
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 
     if (settings.verbose) {
         printf("STL file written successfully\n\n");
-        show_props(&settings);
+        show_settings(&settings);
     }
     
     free(settings.output);

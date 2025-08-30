@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 #include "types.h"
+#include "utils.h"
 #include "constants.h"
 
 float to_radians(float degrees) {
@@ -31,7 +32,7 @@ void rstrip(char *line) {
     }
 }
 
-bool is_appx(float a, float b) {
+bool nearly_equal(float a, float b) {
     return fabs(a - b) < METERS_PER_MICROMETER;
 }
 
@@ -70,10 +71,6 @@ float to_meters(float value, Units units) {
             fprintf(stderr, "wingstl: warning: value cannot be converted to meters\n");
             return value;
     }
-}
-
-int to_integer(char digit) {
-    return digit - '0';
 }
 
 size_t sub2ind(int i, int j, int num_cols) {

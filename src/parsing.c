@@ -12,6 +12,7 @@
 #include "types.h"
 #include "utils.h"
 #include "fileio.h"
+#include "parsing.h"
 #include "constants.h"
 
 void request_value(const char *desc, const char *flag) {
@@ -113,19 +114,19 @@ char *handle_output(int iarg, int num_args, char **args) {
     return output;
 }
 
-void handle_airfoil(int iarg, int num_args, char **args, Settings *settings) {
-    settings->airfoil.num_pts = -1;
+void handle_airfoil(int iarg, int num_args, char **args, Airfoil *airfoil) {
+    airfoil->num_pts = -1;
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
         bool has_ext = (strstr(arg, ".dat") != NULL) || (strstr(arg, ".DAT") != NULL);
 
         if (has_ext) {
-            if (!read_dat(arg, &settings->airfoil)) {
+            if (!read_dat(arg, airfoil)) {
                 return;
             }
 
-            settings->airfoil.num_pts = -1;
+            airfoil->num_pts = -1;
             return;
         }
 
@@ -140,15 +141,15 @@ void handle_airfoil(int iarg, int num_args, char **args, Settings *settings) {
             bool has_zero_thickness = (arg[2] == '0' && arg[3] == '0');
 
             if (!has_zero_thickness) {
-                settings->airfoil.num_pts = 0;
-                settings->airfoil.has_closed_te = true;
-                strcpy(settings->airfoil.header, arg);
+                airfoil->num_pts = 0;
+                airfoil->has_closed_te = true;
+                strcpy(airfoil->header, arg);
                 return;
             }
 
             fprintf(stderr, "wingstl: error: argument for flag '%s' will result in zero thickness; ", FLAG_AIRFOIL);
             fprintf(stderr, "try increasing either of the last two digits of '%s'\n", arg);
-            settings->airfoil.num_pts = -1;
+            airfoil->num_pts = -1;
             return;
         }
 
@@ -156,7 +157,7 @@ void handle_airfoil(int iarg, int num_args, char **args, Settings *settings) {
 
         if (output == NULL) {
             fprintf(stderr, "wingstl: error: unable to allocate memory for file input\n");
-            settings->airfoil.num_pts = -1;
+            airfoil->num_pts = -1;
             return;
         }
 
@@ -171,24 +172,24 @@ void handle_airfoil(int iarg, int num_args, char **args, Settings *settings) {
         if (f == NULL) {
             fprintf(stderr, "wingstl: error: argument for flag '%s' must be either a ", FLAG_AIRFOIL);
             fprintf(stderr, "4-digit naca code or a valid .dat file name\n");
-            settings->airfoil.num_pts = -1;
+            airfoil->num_pts = -1;
             free(output);
             return;
         }
 
         fclose(f);
 
-        if (!read_dat(output, &settings->airfoil)) {
+        if (!read_dat(output, airfoil)) {
             free(output);
             return;
         }
 
         free(output);
-        settings->airfoil.num_pts = -1;
+        airfoil->num_pts = -1;
         return;
     } else {
         request_value("airfoil .dat file or 4-digit naca code", FLAG_AIRFOIL);
-        settings->airfoil.num_pts = -1;
+        airfoil->num_pts = -1;
         return;
     }
 }
@@ -289,7 +290,7 @@ int handle_inputs(int num_args, char **args, Settings *settings) {
             if (settings->root_chord < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_AIRFOIL) == 0) {
-            handle_airfoil(i, num_args, args, settings);
+            handle_airfoil(i, num_args, args, &settings->airfoil);
             if (settings->airfoil.num_pts < 0) { return 1; } else { i++; }
             
         } else if (strcmp(arg, FLAG_CHORD_PTS) == 0) {

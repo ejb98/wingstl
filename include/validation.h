@@ -9,12 +9,16 @@
 #include <stdbool.h>
 #include "types.h"
 
-int validate_props(const Settings *wing);
+int validate_airfoil(const Airfoil *airfoil);
+int validate_settings(const Settings *settings);
 int validate_file(int num_mid_breaks, int num_quantity_lines, int line_no_invalid,
                   bool has_break_before_p0, bool has_empty_header); 
 
 void suggest_adjust_values(void);
 void suggest_flag_and_value(const char *desc, const char *flag);
+
+bool x_increases(const Airfoil *airfoil, int istart, int iend);
+bool x_decreases_then_increases(const Airfoil *airfoil, int istart, int iend);
 
 #endif
 

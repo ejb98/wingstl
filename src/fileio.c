@@ -10,6 +10,7 @@
 
 #include "utils.h"
 #include "types.h"
+#include "engine.h"
 #include "validation.h"
 
 int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname) {
@@ -75,7 +76,7 @@ LineResult parse_line(const char *line, bool first_line, float *x, float *y) {
     return VALUE_LINE;
 }
 
-int read_dat(const char *fname, Airfoil *data) {
+int read_dat(const char *fname, Airfoil *airfoil) {
     FILE *f = fopen(fname, "r");
 
     if (f == NULL) {
@@ -88,18 +89,15 @@ int read_dat(const char *fname, Airfoil *data) {
     int num_breaks = 0;
     int num_quantity = 0;
 
-    float xmin;
-    float xmax;
-    float x, y;
+    float xmin, xmax, x, y;
     char line[MAX_LINE];
 
-    LineResult result;
-    LineResult last_result;
+    LineResult result, last_result;
 
     bool has_break_b4_p0 = false;
     bool has_empty_header = false;
 
-    data->num_pts = 0;
+    airfoil->num_pts = 0;
 
     while (fgets(line, sizeof(line), f) != NULL) {
         rstrip(line);
@@ -107,7 +105,7 @@ int read_dat(const char *fname, Airfoil *data) {
 
         switch (result) {
             case VALID_HEADER_LINE:
-                strcpy(data->header, line);
+                strcpy(airfoil->header, line);
                 break;
             case EMPTY_HEADER_LINE:
                 has_empty_header = true;
@@ -118,28 +116,23 @@ int read_dat(const char *fname, Airfoil *data) {
             case EMPTY_BODY_LINE:
                 break;
             case VALUE_LINE:
-                if (data->num_pts == MAX_AIRFOIL_PTS) {
+                if (airfoil->num_pts == MAX_AIRFOIL_PTS) {
                     fprintf(stderr, "wingstl: error: .dat file contains too many points\n");
-                    fclose(f);
-                    return 1;
+                    fclose(f); return 1;
                 }
 
-                data->pts[data->num_pts].x = x;
-                data->pts[data->num_pts].y = y;
-
-                if (last_result == EMPTY_BODY_LINE && data->num_pts > 0) {
+                airfoil->pts[airfoil->num_pts].x = x;
+                airfoil->pts[airfoil->num_pts].y = y;
+                if (last_result == EMPTY_BODY_LINE && airfoil->num_pts > 0) {
                     num_breaks += 1;
-                    data->lednicer_index = data->num_pts;
+                    airfoil->lednicer_index = airfoil->num_pts;
                 }
 
-                data->num_pts++;
-                if (data->num_pts == 1) {
-                    has_break_b4_p0 = (last_result == EMPTY_BODY_LINE);
-                }
-
-                if (data->num_pts == 1) {
+                airfoil->num_pts++;
+                if (airfoil->num_pts == 1) {
                     xmin = x;
                     xmax = x;
+                    has_break_b4_p0 = (last_result == EMPTY_BODY_LINE);
                 } else {
                     xmin = (x < xmin) ? x : xmin;
                     xmax = (x > xmax) ? x : xmax;
@@ -151,8 +144,7 @@ int read_dat(const char *fname, Airfoil *data) {
                 break;
             default:
                 fprintf(stderr, "wingstl: error: unable to parse line %d of .dat file\n", line_no);
-                fclose(f);
-                return 1;
+                fclose(f); return 1;
         }
 
         line_no++;
@@ -160,29 +152,11 @@ int read_dat(const char *fname, Airfoil *data) {
     }
 
     if (validate_file(num_breaks, num_quantity, num_invalid, has_break_b4_p0, has_empty_header)) {
-        fclose(f);
-        return 1;
+        fclose(f); return 1;
     }
 
-    float chord = xmax - xmin;
-    float divisor = (chord > METERS_PER_MICROMETER) ? chord : 1.0f;
-    
-    for (int i = 0; i < data->num_pts; i++) {
-        data->pts[i].x = (data->pts[i].x - xmin)/divisor;
-        data->pts[i].y /= divisor;
-    }
-
-    int ite_lower = data->num_pts - 1;
-    int ite_upper = data->lednicer_index > 0 ? data->lednicer_index - 1 : 0;
-
-    if (!is_appx(data->pts[ite_upper].x, data->pts[ite_lower].x)) {
-        data->has_closed_te = true;
-    } else {
-        data->has_closed_te = is_appx(data->pts[ite_upper].y, data->pts[ite_lower].y);
-    }
-
-    fclose(f);
-    return 0;
+    adjust_and_scale(airfoil, xmin, xmax);
+    fclose(f); return 0;
 }
 
 /*

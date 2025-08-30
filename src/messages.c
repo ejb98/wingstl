@@ -8,6 +8,7 @@
 
 #include "types.h"
 #include "engine.h"
+#include "messages.h"
 #include "constants.h"
 
 void show_help(void) {
@@ -36,7 +37,7 @@ void show_help(void) {
     printf("Report bugs to: github.com/ejb98/wingstl\n");
 }
 
-void show_props(const Settings *settings) {
+void show_settings(const Settings *settings) {
     char units[8];
 
     switch (settings->units) {

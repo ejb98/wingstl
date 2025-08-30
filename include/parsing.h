@@ -22,7 +22,7 @@ float handle_nonzero_positive(int iarg, int num_args, char **args, const char *d
 char *handle_output(int iarg, int num_args, char **args);
 
 Units handle_units(int iarg, int num_args, char **args);
-void handle_airfoil(int iarg, int num_args, char **args, Settings *settings);
+void handle_airfoil(int iarg, int num_args, char **args, Airfoil *airfoil);
 
 #endif
 

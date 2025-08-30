@@ -16,13 +16,13 @@
 #include "engine.h"
 #include "constants.h"
 
-float get_z_upper_selig(float xc, Airfoil *airfoil) {
+float get_selig_upper_z(float xc, Airfoil *airfoil) {
     float x;
 
     for (int i = 0; i < airfoil->num_pts; i++) {
         x = airfoil->pts[i].x;
 
-        if (is_appx(x, xc)) {
+        if (nearly_equal(x, xc)) {
             return airfoil->pts[i].y;
         }
 
@@ -34,11 +34,11 @@ float get_z_upper_selig(float xc, Airfoil *airfoil) {
     return 0.0f;
 }
 
-float get_z_lower_selig(float xc, Airfoil *airfoil) {
+float get_selig_lower_z(float xc, Airfoil *airfoil) {
     int ifinal = airfoil->num_pts - 1;
-    bool missing_point = !is_appx(airfoil->pts[0].x, airfoil->pts[ifinal].x);
+    bool missing_point = !nearly_equal(airfoil->pts[0].x, airfoil->pts[ifinal].x);
 
-    if (missing_point && is_appx(airfoil->pts[0].x, xc)) {
+    if (missing_point && nearly_equal(airfoil->pts[0].x, xc)) {
         return airfoil->pts[0].y;
     }
 
@@ -47,7 +47,7 @@ float get_z_lower_selig(float xc, Airfoil *airfoil) {
     for (int i = airfoil->num_pts - 1; i >= 0; i--) {
         x = airfoil->pts[i].x;
 
-        if (is_appx(x, xc)) {
+        if (nearly_equal(x, xc)) {
             return airfoil->pts[i].y;
         }
 
@@ -63,13 +63,13 @@ float get_z_lower_selig(float xc, Airfoil *airfoil) {
     return 0.0f;
 }
 
-float get_z_upper_lednicer(float xc, Airfoil *airfoil) {
+float get_lednicer_upper_z(float xc, Airfoil *airfoil) {
     float x;
 
     for (int i = 0; i < airfoil->lednicer_index; i++) {
         x = airfoil->pts[i].x;
 
-        if (is_appx(x, xc)) {
+        if (nearly_equal(x, xc)) {
             return airfoil->pts[i].y;
         }
 
@@ -80,7 +80,7 @@ float get_z_upper_lednicer(float xc, Airfoil *airfoil) {
                 for (int j = airfoil->lednicer_index; j < airfoil->num_pts; j++) {
                     x_lower = airfoil->pts[j].x;
 
-                    if (is_appx(x_lower, xc)) {
+                    if (nearly_equal(x_lower, xc)) {
                         return airfoil->pts[j].y;
                     }
 
@@ -97,13 +97,13 @@ float get_z_upper_lednicer(float xc, Airfoil *airfoil) {
     return 0.0f;
 }
 
-float get_z_lower_lednicer(float xc, Airfoil *airfoil) {
+float get_lednicer_lower_z(float xc, Airfoil *airfoil) {
     int ifinal = airfoil->num_pts - 1;
     int iupper_te = airfoil->lednicer_index - 1;
 
-    bool missing_point = !is_appx(airfoil->pts[iupper_te].x, airfoil->pts[ifinal].x);
+    bool missing_point = !nearly_equal(airfoil->pts[iupper_te].x, airfoil->pts[ifinal].x);
 
-    if (missing_point && is_appx(airfoil->pts[iupper_te].x, xc)) {
+    if (missing_point && nearly_equal(airfoil->pts[iupper_te].x, xc)) {
         return airfoil->pts[iupper_te].y;
     }
 
@@ -112,7 +112,7 @@ float get_z_lower_lednicer(float xc, Airfoil *airfoil) {
     for (int i = ifinal; i > iupper_te; i--) {
         x = airfoil->pts[i].x;
 
-        if (is_appx(x, xc)) {
+        if (nearly_equal(x, xc)) {
             return airfoil->pts[i].y;
         }
 
@@ -128,15 +128,15 @@ float get_z_lower_lednicer(float xc, Airfoil *airfoil) {
     return 0.0f;
 }
 
-float get_z_lednicer(float xc, Airfoil *airfoil, bool is_upper) {
-    return is_upper ? get_z_upper_lednicer(xc, airfoil) : get_z_lower_lednicer(xc, airfoil);
+float get_lednicer_z(float xc, Airfoil *airfoil, bool is_upper) {
+    return is_upper ? get_lednicer_upper_z(xc, airfoil) : get_lednicer_lower_z(xc, airfoil);
 }
 
-float get_z_selig(float xc, Airfoil *airfoil, bool is_upper) {
-    return is_upper ? get_z_upper_selig(xc, airfoil) : get_z_lower_selig(xc, airfoil);
+float get_selig_z(float xc, Airfoil *airfoil, bool is_upper) {
+    return is_upper ? get_selig_upper_z(xc, airfoil) : get_selig_lower_z(xc, airfoil);
 }
 
-float get_camber(float x, float m, float p) {
+float get_naca4_camber(float x, float m, float p) {
     float a = 2.0f * p * x - x * x;
 
     if (x < p && p > FLT_EPSILON) {
@@ -148,7 +148,7 @@ float get_camber(float x, float m, float p) {
     return m * (1.0f - 2.0f * p + a) / (b * b);
 }
 
-float get_gradient(float x, float m, float p) {
+float get_naca4_gradient(float x, float m, float p) {
     float a = (2.0f * m) * (p - x);
 
     if (x < p && p > FLT_EPSILON) {
@@ -160,7 +160,7 @@ float get_gradient(float x, float m, float p) {
     return a / (b * b);
 }
 
-float get_thickness(float x, float t, bool is_closed) {
+float get_naca4_thickness(float x, float t, bool is_closed) {
     float x2 = x * x;
     float a4 = is_closed ? A4_CLOSED: A4_OPEN;  
 
@@ -168,16 +168,49 @@ float get_thickness(float x, float t, bool is_closed) {
             A3 * x2 * x + a4 * x2 * x2) * t / 0.2f;
 }
 
-float get_x_surface(float xc, float thickness, float theta, bool is_upper) {
+float get_naca4_surface_x(float xc, float thickness, float theta, bool is_upper) {
     float sign = is_upper ? -1.0f : 1.0f;
 
     return xc + sign * thickness * sinf(theta);
 }
 
-float get_z_surface(float zc, float thickness, float theta, bool is_upper) {
+float get_naca4_surface_z(float zc, float thickness, float theta, bool is_upper) {
     float sign = is_upper ? 1.0f : -1.0f;
 
     return zc + sign * thickness * cosf(theta);
+}
+
+float get_surface_x(float xn_camber, Airfoil *airfoil, bool is_upper) {
+    if (airfoil->num_pts > 0) {
+        return xn_camber;
+    }
+
+    float m = (airfoil->header[0] - '0') / 100.0f;
+    float p = (airfoil->header[1] - '0') / 10.0f;
+    float t = atoi(airfoil->header + 2) / 100.0f;
+    float theta = get_naca4_gradient(xn_camber, m, p);
+    float thickness = get_naca4_thickness(xn_camber, t, airfoil->has_closed_te);
+
+    return get_naca4_surface_x(xn_camber, thickness, theta, is_upper);
+}
+
+float get_surface_z(float xn_camber, Airfoil *airfoil, bool is_upper) {
+    if (airfoil->num_pts > 0 && airfoil->lednicer_index > 0) {
+        return get_lednicer_z(xn_camber, airfoil, is_upper);
+    }
+
+    if (airfoil->num_pts > 0 && airfoil->lednicer_index == 0) {
+        return get_selig_z(xn_camber, airfoil, is_upper);
+    }
+
+    float m = (airfoil->header[0] - '0') / 100.0f;
+    float p = (airfoil->header[1] - '0') / 10.0f;
+    float t = atoi(airfoil->header + 2) / 100.0f;
+    float theta = get_naca4_gradient(xn_camber, m, p);
+    float thickness = get_naca4_thickness(xn_camber, t, airfoil->has_closed_te);
+    float zn_camber = get_naca4_camber(xn_camber, m, p);
+
+    return get_naca4_surface_z(zn_camber, thickness, theta, is_upper);
 }
 
 size_t get_num_pts(const Settings *settings) {
@@ -202,31 +235,16 @@ Vec3D *make_pts(Settings *settings) {
     
     float dx_te;
     float dx_le;
-    float theta;
     float xn_surf;
     float zn_surf;
     float y_camber;
     float xn_camber;
-    float zn_camber;
-    float thickness;
     float local_chord;
 
     int row_max = settings->num_pts_chord;
     int num_rows = settings->num_pts_chord;
     int num_cols = settings->num_pts_span;
     int row_start = 0;
-
-    float m, p, t;
-
-    bool is_naca4 = (settings->airfoil.num_pts == 0);
-    bool is_selig = !is_naca4 && (settings->airfoil.lednicer_index == 0);
-
-    if (is_naca4) {
-        m = to_integer(settings->airfoil.header[0]) / 100.0f;
-        p = to_integer(settings->airfoil.header[1]) / 10.0f;
-        t = (to_integer(settings->airfoil.header[2]) * 10 + 
-             to_integer(settings->airfoil.header[3])) / 100.0f;
-    }
 
     float tan_le = tanf(to_radians(90.0f - settings->sweep_angles[0]));
     float tan_te = tanf(to_radians(90.0f - settings->sweep_angles[1]));
@@ -253,22 +271,8 @@ Vec3D *make_pts(Settings *settings) {
                 }
 
                 xn_camber = (1.0f - cosf(((float) i / (num_rows - 1)) * PI)) / 2.0f;
-
-                if (is_naca4) {
-                    theta = get_gradient(xn_camber, m, p);
-                    thickness = get_thickness(xn_camber, t, settings->airfoil.has_closed_te);
-                    zn_camber = get_camber(xn_camber, m, p);
-                    zn_surf = get_z_surface(zn_camber, thickness, theta, is_upper);
-                    xn_surf = get_x_surface(xn_camber, thickness, theta, is_upper);
-                } else {
-                    xn_surf = xn_camber;
-
-                    if (is_selig) {
-                        zn_surf = get_z_selig(xn_camber, &settings->airfoil, is_upper);
-                    } else {
-                        zn_surf = get_z_lednicer(xn_camber, &settings->airfoil, is_upper);
-                    }
-                }
+                xn_surf = get_surface_x(xn_camber, &settings->airfoil, is_upper);
+                zn_surf = get_surface_z(xn_camber, &settings->airfoil, is_upper);
 
                 pts[ind].y = to_meters(y_camber, settings->units);
                 pts[ind].z = to_meters(zn_surf * local_chord, settings->units);
@@ -448,6 +452,25 @@ bool tip_overlap(const Settings *settings) {
     }
 
     return settings->root_chord + offsets[1] <= offsets[0];
+}
+
+void adjust_and_scale(Airfoil *airfoil, float xmin, float xmax) {
+    float chord = xmax - xmin;
+    float divisor = (chord > METERS_PER_MICROMETER) ? chord : 1.0f;
+    
+    for (int i = 0; i < airfoil->num_pts; i++) {
+        airfoil->pts[i].x = (airfoil->pts[i].x - xmin)/divisor;
+        airfoil->pts[i].y /= divisor;
+    }
+
+    int ite_lower = airfoil->num_pts - 1;
+    int ite_upper = airfoil->lednicer_index > 0 ? airfoil->lednicer_index - 1 : 0;
+
+    if (!nearly_equal(airfoil->pts[ite_upper].x, airfoil->pts[ite_lower].x)) {
+        airfoil->has_closed_te = true;
+    } else {
+        airfoil->has_closed_te = nearly_equal(airfoil->pts[ite_upper].y, airfoil->pts[ite_lower].y);
+    }
 }
 
 /*
