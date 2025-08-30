@@ -1,5 +1,5 @@
 # wingstl
-`wingstl` is a lightweight command-line tool for generating 3D-printable STL files of swept wings based on NACA 4-digit airfoils.
+`wingstl` is a lightweight command-line tool for generating 3D-printable STL files of swept wings using a specified airfoil.
 It allows you to quickly define wing geometry and export it directly for use in CAD, slicing software, or CFD preprocessing.
 
 ## Example Output
@@ -21,7 +21,7 @@ Note: also use `-lm` flag if building on Linux.
 ```bash
 wingstl [OPTIONS]
 ```
-Generate an STL file for a swept wing given user-defined dimensions and NACA airfoil code.
+Generate an STL file for a swept wing given user-defined dimensions and NACA airfoil code (or .dat file name).
 
 ### Options
 
@@ -30,7 +30,7 @@ Generate an STL file for a swept wing given user-defined dimensions and NACA air
 | `-h`   | flag | *(n/a)*      | Show the help message and exit.                                                        |
 | `-v`   | flag | *(n/a)*      | Enable verbose output.                                                                 |
 | `-p`   | INT  | `100`        | Number of coordinate points along the chord (higher = smoother STL, larger file size). |
-| `-a`   | STR  | *(required)* | NACA 4-digit airfoil code (e.g., `2412`, `0012`).                                      |
+| `-a`   | STR  | *(required)* | NACA 4-digit airfoil code (e.g., `2412`, `0012`) or .dat file name.                    |
 | `-u`   | STR  | `"m"`        | Units for all dimensions (`m`, `cm`, `mm`, `ft`, or `in`).                             |
 | `-o`   | STR  | `"wing.stl"` | Output STL file name.                                                                  |
 | `-b`   | REAL | *(required)* | Wing **semi-span length** (distance from root to tip).                                 |
@@ -39,13 +39,13 @@ Generate an STL file for a swept wing given user-defined dimensions and NACA air
 | `-t`   | REAL | `90`         | **Trailing edge sweep angle** in degrees (90° = no sweep).                             |
 
 ### Examples
-Generate a 6 m semi-span wing with a 1 m root chord using a NACA 2412 airfoil:
+Generate a 6 meter semi-span wing with a 1 m root chord using a NACA 2412 airfoil:
 ```bash
 wingstl -a 2412 -b 6 -c 1 -v -o planform.stl
 ```
-Generate a smaller wing in feet with a swept leading and trailing edge:
+Generate a 3 foot semi-span wing with swept leading and trailing edges and using a Selig 1223 airfoil:
 ```bash
-wingstl -a 1224 -b 3 -c 0.75 -u ft -l 85 -t 85
+wingstl -a selig_1223.dat -b 3 -c 0.75 -u ft -l 85 -t 85
 
 ```
 ### Output
