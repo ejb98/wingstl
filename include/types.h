@@ -17,10 +17,6 @@ typedef struct Vec3D {
     float x, y, z;
 } Vec3D;
 
-typedef struct NACA4Digit {
-    int m, p, t;
-} NACA4Digit;
-
 typedef enum Units {
     FEET,
     INCHES,
@@ -39,10 +35,18 @@ typedef enum LineResult {
     INVALID_FORMAT_LINE
 } LineResult;
 
-typedef struct Wing {
+typedef struct Airfoil {
+    int num_pts;
+    int lednicer_index;
+    char header[MAX_LINE];
+    Vec2D pts[MAX_AIRFOIL_PTS];
+    bool has_closed_te;
+} Airfoil;
+
+typedef struct Settings {
     Units units;
-    NACA4Digit airfoil;
-    
+    Airfoil airfoil;
+
     int num_pts_span;
     int num_pts_chord;
 
@@ -50,22 +54,11 @@ typedef struct Wing {
     float root_chord;
     float sweep_angles[2];
 
-    bool has_closed_te;
-    bool has_cosine_spacing;
-} Wing;
-
-typedef struct Settings {
     bool help;
     bool verbose;
+
     char *output;
 } Settings;
-
-typedef struct AirfoilData {
-    int num_pts;
-    int lednicer_index;
-    char header[MAX_LINE];
-    Vec2D pts[MAX_AIRFOIL_PTS];
-} AirfoilData;
 
 #endif
 

@@ -75,7 +75,7 @@ LineResult parse_line(const char *line, bool first_line, float *x, float *y) {
     return VALUE_LINE;
 }
 
-int read_dat(const char *fname, AirfoilData *data) {
+int read_dat(const char *fname, Airfoil *data) {
     FILE *f = fopen(fname, "r");
 
     if (f == NULL) {
@@ -170,6 +170,15 @@ int read_dat(const char *fname, AirfoilData *data) {
     for (int i = 0; i < data->num_pts; i++) {
         data->pts[i].x = (data->pts[i].x - xmin)/divisor;
         data->pts[i].y /= divisor;
+    }
+
+    int ite_lower = data->num_pts - 1;
+    int ite_upper = data->lednicer_index > 0 ? data->lednicer_index - 1 : 0;
+
+    if (!is_appx(data->pts[ite_upper].x, data->pts[ite_lower].x)) {
+        data->has_closed_te = true;
+    } else {
+        data->has_closed_te = is_appx(data->pts[ite_upper].y, data->pts[ite_lower].y);
     }
 
     fclose(f);

@@ -11,7 +11,7 @@
 
 #include "types.h"
 
-int read_dat(const char *fname, AirfoilData *data);
+int read_dat(const char *fname, Airfoil *data);
 int write_stl(Vec3D *pts, const size_t *indices, size_t num_tris, const char *fname);
 LineResult parse_line(const char *line, bool first_line, float *x, float *y);
 

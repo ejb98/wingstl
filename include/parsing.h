@@ -14,7 +14,7 @@ void request_n_digits(const char *desc, const char *flag, int n);
 void request_bounded_integer(const char *desc, const char *flag, int val, const char *qualifier);
 
 int handle_chord_pts(int iarg, int num_args, char **args);
-int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings);
+int handle_inputs(int num_args, char **args, Settings *settings);
 
 float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag);
 float handle_nonzero_positive(int iarg, int num_args, char **args, const char *desc, const char *flag);
@@ -22,7 +22,7 @@ float handle_nonzero_positive(int iarg, int num_args, char **args, const char *d
 char *handle_output(int iarg, int num_args, char **args);
 
 Units handle_units(int iarg, int num_args, char **args);
-NACA4Digit handle_airfoil(int iarg, int num_args, char **args);
+void handle_airfoil(int iarg, int num_args, char **args, Settings *settings);
 
 #endif
 

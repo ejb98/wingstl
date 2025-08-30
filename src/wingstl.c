@@ -16,7 +16,7 @@
 #include "validation.h"
 
 int main(int argc, char **argv) {
-    Wing wing = {
+    Settings settings = {
         .units = to_units(DEFAULT_UNITS),
         .airfoil = {DEFAULT_AIRFOIL},
         .semi_span = DEFAULT_SEMI_SPAN,
@@ -24,13 +24,10 @@ int main(int argc, char **argv) {
         .sweep_angles = {DEFAULT_SWEEP_LE, DEFAULT_SWEEP_TE},
         .num_pts_span = DEFAULT_NUM_SPAN_PTS,
         .num_pts_chord = DEFAULT_NUM_CHORD_PTS,
-        .has_closed_te = DEFAULT_HAS_CLOSED_TE,
-        .has_cosine_spacing = DEFAULT_HAS_COSINE_SPACING
+        .verbose = false, .help = false, .output = NULL
     };
 
-    Settings settings = {.verbose = false, .help = false, .output = NULL};
-
-    if (handle_inputs(argc, argv, &wing, &settings)) {
+    if (handle_inputs(argc, argv, &settings)) {
         if (settings.help) {
             show_help();
             return 0;
@@ -39,18 +36,18 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (validate_props(&wing)) {
+    if (validate_props(&settings)) {
         return 1;
     }
 
-    Vec3D *pts = make_pts(&wing);
+    Vec3D *pts = make_pts(&settings);
 
     if (pts == NULL) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for vertices\n");
         return 1;
     }
 
-    size_t *indices = make_indices(&wing);
+    size_t *indices = make_indices(&settings);
 
     if (indices == NULL) {
         fprintf(stderr, "wingstl: error: unable to allocate memory for triangle indices\n");
@@ -58,16 +55,10 @@ int main(int argc, char **argv) {
 
         return 1;
     }
-    size_t num_tris = get_num_tris(&wing);
+    
+    size_t num_tris = get_num_tris(&settings);
 
-    int stl_error;
-    if (settings.output == NULL) {
-        stl_error = write_stl(pts, indices, num_tris, DEFAULT_OUTPUT);
-    } else {
-        stl_error = write_stl(pts, indices, num_tris, settings.output);
-    }
-
-    if (stl_error) {
+    if (write_stl(pts, indices, num_tris, !settings.output ? DEFAULT_OUTPUT : settings.output)) {
         free(settings.output);
         free(indices);
         free(pts);
@@ -77,7 +68,7 @@ int main(int argc, char **argv) {
 
     if (settings.verbose) {
         printf("STL file written successfully\n\n");
-        show_props(&wing);
+        show_props(&settings);
     }
     
     free(settings.output);

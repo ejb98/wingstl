@@ -11,6 +11,7 @@
 
 #include "types.h"
 #include "utils.h"
+#include "fileio.h"
 #include "constants.h"
 
 void request_value(const char *desc, const char *flag) {
@@ -84,15 +85,14 @@ char *handle_output(int iarg, int num_args, char **args) {
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
-        int num_chars = strlen(arg);
-        char *last_four = arg + num_chars - 4;
-        bool has_ext = (strcmp(last_four, ".stl") == 0 || strcmp(last_four, ".STL") == 0);
+        int length = strlen(arg);
+        bool has_ext = (strstr(arg, ".stl") != NULL) || (strstr(arg, ".STL") != NULL);
 
         if (!has_ext) {
-            num_chars += 4;
+            length += 4;
         }
 
-        output = (char *) malloc((num_chars + 1) * sizeof(char));
+        output = (char *) malloc((length + 1) * sizeof(char));
 
         if (output == NULL) {
             fprintf(stderr, "wingstl: error: unable to allocate memory for file output\n");
@@ -113,64 +113,84 @@ char *handle_output(int iarg, int num_args, char **args) {
     return output;
 }
 
-NACA4Digit handle_airfoil(int iarg, int num_args, char **args) {
-    NACA4Digit airfoil = {.m = -1};
+void handle_airfoil(int iarg, int num_args, char **args, Settings *settings) {
+    settings->airfoil.num_pts = -1;
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
-        int num_digits = strlen(arg);
+        bool has_ext = (strstr(arg, ".dat") != NULL) || (strstr(arg, ".DAT") != NULL);
 
-        if (num_digits != 4) {
-            request_n_digits("naca airfoil", FLAG_AIRFOIL, 4);
-            airfoil.m = -1;
-            return airfoil;
-        }
-
-        if (arg[2] == '0' && arg[3] == '0') {
-            fprintf(stderr, "wingstl: error: argument for flag '%s' will result in zero thickness;\n", FLAG_AIRFOIL);
-            fprintf(stderr, "                try increasing either of the last two digits of '%s'\n", arg);
-            fprintf(stderr, "                                                                   ^^\n");
-            airfoil.m = -1;
-            return airfoil;
-        }
-
-        char digit;
-        for (int j = 0; j < num_digits; j++) {
-            digit = arg[j];
-
-            if (!isdigit(digit)) {
-                request_n_digits("naca airfoil", FLAG_AIRFOIL, 4);
-                airfoil.m = -1;
-                return airfoil;
+        if (has_ext) {
+            if (!read_dat(arg, &settings->airfoil)) {
+                return;
             }
 
-            switch (j) {
-                case 0:
-                    airfoil.m = to_integer(digit);
-                    break;
-                case 1:
-                    airfoil.p = to_integer(digit);
-                    break;
-                case 2:
-                    airfoil.t = to_integer(digit);
-                    break;
-                case 3:
-                    airfoil.t = 10 * airfoil.t + to_integer(digit);
-                    break;
-                default:
-                    request_n_digits("naca airfoil", FLAG_AIRFOIL, 4);
-                    airfoil.m = -1;
-                    return airfoil;
-            }
+            settings->airfoil.num_pts = -1;
+            return;
         }
 
+        int length = strlen(arg);
+        bool is_four_digits = (length == 4);
+
+        for (int i = 0; i < length; i++) {
+            is_four_digits = is_four_digits && isdigit((unsigned char) arg[i]);
+        }
+
+        if (is_four_digits) {
+            bool has_zero_thickness = (arg[2] == '0' && arg[3] == '0');
+
+            if (!has_zero_thickness) {
+                settings->airfoil.num_pts = 0;
+                settings->airfoil.has_closed_te = true;
+                strcpy(settings->airfoil.header, arg);
+                return;
+            }
+
+            fprintf(stderr, "wingstl: error: argument for flag '%s' will result in zero thickness; ", FLAG_AIRFOIL);
+            fprintf(stderr, "try increasing either of the last two digits of '%s'\n", arg);
+            settings->airfoil.num_pts = -1;
+            return;
+        }
+
+        char *output = (char *) malloc((length + 5) * sizeof(char));
+
+        if (output == NULL) {
+            fprintf(stderr, "wingstl: error: unable to allocate memory for file input\n");
+            settings->airfoil.num_pts = -1;
+            return;
+        }
+
+        sprintf(output, "%s.dat", arg);
+        FILE *f = fopen(output, "r");
+
+        if (f == NULL) {
+            sprintf(output, "%s.DAT", arg);
+            f = fopen(output, "r");
+        }
+        
+        if (f == NULL) {
+            fprintf(stderr, "wingstl: error: argument for flag '%s' must be either a ", FLAG_AIRFOIL);
+            fprintf(stderr, "4-digit naca code or a valid .dat file name\n");
+            settings->airfoil.num_pts = -1;
+            free(output);
+            return;
+        }
+
+        fclose(f);
+
+        if (!read_dat(output, &settings->airfoil)) {
+            free(output);
+            return;
+        }
+
+        free(output);
+        settings->airfoil.num_pts = -1;
+        return;
     } else {
-        request_value("naca 4-digit airfoil", FLAG_AIRFOIL);
-        airfoil.m = -1;
-        return airfoil;
+        request_value("airfoil .dat file or 4-digit naca code", FLAG_AIRFOIL);
+        settings->airfoil.num_pts = -1;
+        return;
     }
-
-    return airfoil;
 }
 
 int handle_chord_pts(int iarg, int num_args, char **args) {
@@ -233,8 +253,8 @@ float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
     return sweep;
 }
 
-int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
-    if (num_args == 1) {
+int handle_inputs(int num_args, char **args, Settings *settings) {
+    if (num_args < 2) {
         fprintf(stderr, "wingstl: error: missing required arguments; use flag ('%s') for help\n", FLAG_HELP);
         return 1;
     }
@@ -261,32 +281,32 @@ int handle_inputs(int num_args, char **args, Wing *wing, Settings *settings) {
             if (settings->output == NULL) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_SEMI_SPAN) == 0) {
-            wing->semi_span = handle_nonzero_positive(i, num_args, args, "semi span", FLAG_SEMI_SPAN);
-            if (wing->semi_span < 0.0f) { return 1; } else { i++; }
+            settings->semi_span = handle_nonzero_positive(i, num_args, args, "semi span", FLAG_SEMI_SPAN);
+            if (settings->semi_span < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_ROOT_CHORD) == 0) {
-            wing->root_chord = handle_nonzero_positive(i, num_args, args, "root chord", FLAG_ROOT_CHORD);
-            if (wing->root_chord < 0.0f) { return 1; } else { i++; }
+            settings->root_chord = handle_nonzero_positive(i, num_args, args, "root chord", FLAG_ROOT_CHORD);
+            if (settings->root_chord < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_AIRFOIL) == 0) {
-            wing->airfoil = handle_airfoil(i, num_args, args);
-            if (wing->airfoil.m < 0) { return 1; } else { i++; }
+            handle_airfoil(i, num_args, args, settings);
+            if (settings->airfoil.num_pts < 0) { return 1; } else { i++; }
             
         } else if (strcmp(arg, FLAG_CHORD_PTS) == 0) {
-            wing->num_pts_chord = handle_chord_pts(i, num_args, args);
-            if (wing->num_pts_chord < 0) { return 1; } else { i++; }
+            settings->num_pts_chord = handle_chord_pts(i, num_args, args);
+            if (settings->num_pts_chord < 0) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_SWEEP_LE) == 0) {
-            wing->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_LE);
-            if (wing->sweep_angles[0] < 0.0f) { return 1; } else { i++; }
+            settings->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_LE);
+            if (settings->sweep_angles[0] < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_SWEEP_TE) == 0) {
-            wing->sweep_angles[1] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
-            if (wing->sweep_angles[1] < 0.0f) { return 1; } else { i++; }
+            settings->sweep_angles[1] = handle_sweep(i, num_args, args, FLAG_SWEEP_TE);
+            if (settings->sweep_angles[1] < 0.0f) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_UNITS) == 0) {
-            wing->units = handle_units(i, num_args, args);
-            if (wing->units == UNKNOWN_UNITS) { return 1; } else { i++; }
+            settings->units = handle_units(i, num_args, args);
+            if (settings->units == UNKNOWN_UNITS) { return 1; } else { i++; }
 
         } else {
             fprintf(stderr, "wingstl: error: unrecognized argument flag '%s'\n", arg);

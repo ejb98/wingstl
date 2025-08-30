@@ -19,8 +19,8 @@ void suggest_flag_and_value(const char *desc, const char *flag) {
     fprintf(stderr, "wingstl: error: specify %s using the flag '%s' followed by a value\n", desc, flag);
 }
 
-int validate_props(const Wing *wing) {
-    if (wing->airfoil.m < 0) {
+int validate_props(const Settings *wing) {
+    if (wing->airfoil.num_pts < 0) {
         suggest_flag_and_value("4-digit naca airfoil", FLAG_AIRFOIL);
         return 1;
     }
@@ -32,13 +32,6 @@ int validate_props(const Wing *wing) {
 
     if (wing->root_chord < 0.0f) {
         suggest_flag_and_value("root chord", FLAG_ROOT_CHORD);
-        return 1;
-    }
-
-    if (wing->airfoil.t == 0) {
-        fprintf(stderr, "wingstl: error: zero thickness wing detected; ");
-        fprintf(stderr, "try increasing the third or fourth digit in the value for '%s'", FLAG_AIRFOIL);
-
         return 1;
     }
 

@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include "types.h"
 
-int validate_props(const Wing *wing);
+int validate_props(const Settings *wing);
 int validate_file(int num_mid_breaks, int num_quantity_lines, int line_no_invalid,
                   bool has_break_before_p0, bool has_empty_header); 
 
