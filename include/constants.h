@@ -21,6 +21,8 @@
 #define MAX_SWEEP 179
 #define MIN_CHORD_PTS 20
 #define MAX_CHORD_PTS 200
+#define MIN_NUM_SLICES 1
+#define MAX_NUM_SLICES 50
 #define MIN_AIRFOIL_PTS 3
 #define MAX_AIRFOIL_PTS 1000
 #define MIN_ASPECT_RATIO 1.0f
@@ -35,6 +37,7 @@
 #define FLAG_SWEEP_TE "-t"
 #define FLAG_CHORD_PTS "-p"
 #define FLAG_SEMI_SPAN "-b"
+#define FLAG_NUM_SLICES "-n"
 #define FLAG_ROOT_CHORD "-c"
 
 #define DEFAULT_UNITS "m"
@@ -44,7 +47,7 @@
 #define DEFAULT_SWEEP_TE 90.0f
 #define DEFAULT_SEMI_SPAN -1.0f
 #define DEFAULT_ROOT_CHORD -1.0f
-#define DEFAULT_NUM_SPAN_PTS 2
+#define DEFAULT_NUM_SLICES 1
 #define DEFAULT_NUM_CHORD_PTS 100
 #define DEFAULT_HAS_CLOSED_TE 1
 

@@ -13,12 +13,12 @@
 
 void show_help(void) {
     printf("Usage: wingstl [OPTIONS]\n\n");
-    
     printf("Generate an STL file for a swept wing given dimensions and airfoil.\n\n");
 
     printf("Options:\n");
     printf("  %s\t\tShow this help message and exit\n", FLAG_HELP);
     printf("  %s\t\tEnable verbose output\n", FLAG_VERBOSE);
+    printf("  %s  INT\tNumber of desired spanwise slices for STL model (default: %d)\n", FLAG_NUM_SLICES, DEFAULT_NUM_SLICES);
     printf("  %s  INT\tNumber of points along the chord (default: %d)\n", FLAG_CHORD_PTS, DEFAULT_NUM_CHORD_PTS);
     printf("  %s  STR\tNACA 4-digit airfoil code or airfoil .dat file name (required)\n", FLAG_AIRFOIL);
     printf("  %s  STR\tUnits (default: '%s')\n", FLAG_UNITS, DEFAULT_UNITS);
@@ -29,8 +29,8 @@ void show_help(void) {
     printf("  %s  REAL\tTrailing edge sweep angle in degrees (default: %.0f)\n\n", FLAG_SWEEP_TE, DEFAULT_SWEEP_TE);
 
     printf("Examples:\n");
-    printf("  wingstl %s selig1223.dat %s 6 %s 1 %s %s planform.stl\n", 
-              FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_VERBOSE, FLAG_OUTPUT);
+    printf("  wingstl %s selig1223.dat %s 6 %s 1 %s %s 4 %s planform.stl\n", 
+              FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_VERBOSE, FLAG_NUM_SLICES, FLAG_OUTPUT);
     printf("  wingstl %s 1224 %s 3 %s 0.75 %s in %s 85 %s 85\n\n", 
               FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_UNITS, FLAG_SWEEP_LE, FLAG_SWEEP_TE);
 
@@ -79,8 +79,8 @@ void show_settings(const Settings *settings) {
     printf("  Leading edge sweep angle:\t%.2f deg\n", settings->sweep_angles[0]);
     printf("  Trailing edge sweep angle:\t%.2f deg\n", settings->sweep_angles[1]);
     printf("  Trailing edge configuration:\t%s\n", (settings->airfoil.has_closed_te ? "closed" : "open"));
-    printf("  Spanwise points:\t\t%d\n", settings->num_pts_span);
     printf("  Chordwise points:\t\t%d\n", settings->num_pts_chord);
+    printf("  Number of Slices:\t\t%d\n", settings->num_slices);
 }
 
 /*

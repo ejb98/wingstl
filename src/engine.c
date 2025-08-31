@@ -214,14 +214,14 @@ float get_surface_z(float xn_camber, Airfoil *airfoil, bool is_upper) {
 }
 
 size_t get_num_pts(const Settings *settings) {
-    return (size_t) settings->num_pts_span * (2 * settings->num_pts_chord - 
-                    settings->airfoil.has_closed_te - 1);
+    return (size_t) (settings->num_slices + 1) * (2 * settings->num_pts_chord - 
+                     settings->airfoil.has_closed_te - 1);
 }
 
 size_t get_num_tris(const Settings *settings) {
-    size_t num_tris_surf = (settings->num_pts_chord - 1) * (settings->num_pts_span - 1) * 2;
+    size_t num_tris_surf = (settings->num_pts_chord - 1) * 2;
     size_t num_tris_side = 2 * settings->num_pts_chord - settings->airfoil.has_closed_te - 3;
-    size_t num_tris_aft = !settings->airfoil.has_closed_te * (settings->num_pts_span - 1) * 2;
+    size_t num_tris_aft = !settings->airfoil.has_closed_te * 2;
     
     return 2 * (num_tris_surf + num_tris_side) + num_tris_aft;
 }
@@ -243,7 +243,7 @@ Vec3D *make_pts(Settings *settings) {
 
     int row_max = settings->num_pts_chord;
     int num_rows = settings->num_pts_chord;
-    int num_cols = settings->num_pts_span;
+    int num_cols = settings->num_slices + 1;
     int row_start = 0;
 
     float tan_le = tanf(to_radians(90.0f - settings->sweep_angles[0]));
@@ -285,58 +285,57 @@ Vec3D *make_pts(Settings *settings) {
 }
 
 size_t get_upper_index(const Settings *settings, int i, int j) {
-    return sub2ind(i, j, settings->num_pts_span);
+    return sub2ind(i, j, settings->num_slices + 1);
 }
 
 size_t get_lower_index(const Settings *settings, int i, int j) {
     bool is_last_row = (i == settings->num_pts_chord - 1);
 
     if (i == 0 || (is_last_row && settings->airfoil.has_closed_te)) {
-        return sub2ind(i, j, settings->num_pts_span);
+        return sub2ind(i, j, settings->num_slices + 1);
     }
 
-    size_t offset = sub2ind(i - 1, j, settings->num_pts_span);
-    return (size_t) settings->num_pts_chord * settings->num_pts_span + offset;
+    size_t offset = sub2ind(i - 1, j, settings->num_slices + 1);
+    return (size_t) settings->num_pts_chord * (settings->num_slices + 1) + offset;
 }
 
-size_t fill_upper_lower_indices(const Settings *settings, size_t k, size_t *inds) {
+size_t fill_upper_lower_indices(const Settings *settings, size_t k, size_t *inds, int islice) {
     size_t corners[4];
 
+    int j = islice;
     for (int is_upper = 1; is_upper >= 0; is_upper--) {
         for (int i = 0; i < settings->num_pts_chord - 1; i++) {
-            for (int j = 0; j < settings->num_pts_span - 1; j++) {
-                if (is_upper) {
-                    corners[0] = get_upper_index(settings, i, j);
-                    corners[1] = get_upper_index(settings, i, j + 1);
-                    corners[2] = get_upper_index(settings, i + 1, j + 1);
-                    corners[3] = get_upper_index(settings, i + 1, j);
-                } else {
-                    corners[0] = get_lower_index(settings, i, j + 1);
-                    corners[1] = get_lower_index(settings, i, j);
-                    corners[2] = get_lower_index(settings, i + 1, j);
-                    corners[3] = get_lower_index(settings, i + 1, j + 1);
-                }
-
-                inds[k++] = corners[3];
-                inds[k++] = corners[2];
-                inds[k++] = corners[1];
-                inds[k++] = corners[3];
-                inds[k++] = corners[1];
-                inds[k++] = corners[0];
+            if (is_upper) {
+                corners[0] = get_upper_index(settings, i, j);
+                corners[1] = get_upper_index(settings, i, j + 1);
+                corners[2] = get_upper_index(settings, i + 1, j + 1);
+                corners[3] = get_upper_index(settings, i + 1, j);
+            } else {
+                corners[0] = get_lower_index(settings, i, j + 1);
+                corners[1] = get_lower_index(settings, i, j);
+                corners[2] = get_lower_index(settings, i + 1, j);
+                corners[3] = get_lower_index(settings, i + 1, j + 1);
             }
+
+            inds[k++] = corners[3];
+            inds[k++] = corners[2];
+            inds[k++] = corners[1];
+            inds[k++] = corners[3];
+            inds[k++] = corners[1];
+            inds[k++] = corners[0];
         }
     }
 
     return k;
 }
 
-size_t fill_port_star_indices(const Settings *settings, size_t k, size_t *inds) {
+size_t fill_port_star_indices(const Settings *settings, size_t k, size_t *inds, int islice) {
     int j;
     bool is_last_row;
     size_t corners[4];
 
     for (int is_port = 1; is_port >= 0; is_port--) { 
-        j = !is_port * (settings->num_pts_span - 1);
+        j = is_port ? islice : islice + 1;
 
         for (int i = 0; i < settings->num_pts_chord - 1; i++) {
             is_last_row = (i == settings->num_pts_chord - 2);
@@ -387,47 +386,39 @@ size_t fill_port_star_indices(const Settings *settings, size_t k, size_t *inds) 
     return k;
 }
 
-size_t fill_aft_indices(const Settings *settings, size_t k, size_t *inds) {
+size_t fill_aft_indices(const Settings *settings, size_t k, size_t *inds, int islice) {
     int i = settings->num_pts_chord - 1;
+    int j = islice;
+
     size_t corners[4];
 
-    for (int j = 0; j < settings->num_pts_span - 1; j++) {
-        corners[0] = get_lower_index(settings, i, j);
-        corners[1] = get_lower_index(settings, i, j + 1);
-        corners[2] = get_upper_index(settings, i, j + 1);
-        corners[3] = get_upper_index(settings, i, j);
+    corners[0] = get_lower_index(settings, i, j);
+    corners[1] = get_lower_index(settings, i, j + 1);
+    corners[2] = get_upper_index(settings, i, j + 1);
+    corners[3] = get_upper_index(settings, i, j);
 
-        inds[k++] = corners[0];
-        inds[k++] = corners[1];
-        inds[k++] = corners[2];
-        inds[k++] = corners[0];
-        inds[k++] = corners[2];
-        inds[k++] = corners[3];
-    }
+    inds[k++] = corners[0];
+    inds[k++] = corners[1];
+    inds[k++] = corners[2];
+    inds[k++] = corners[0];
+    inds[k++] = corners[2];
+    inds[k++] = corners[3];
 
     return k;
 }
 
-size_t *make_indices(const Settings *settings) {
+void assign_indices(const Settings *settings, size_t num_tris, int islice, size_t *indices) {
     size_t k = 0;
-    size_t num_tris = get_num_tris(settings);
-    size_t *indices = (size_t *) malloc(3 * num_tris * sizeof(size_t));
 
-    if (indices == NULL) {
-        return NULL;
-    }
-
-    k = fill_upper_lower_indices(settings, k, indices);
-    k = fill_port_star_indices(settings, k, indices);
+    k = fill_upper_lower_indices(settings, k, indices, islice);
+    k = fill_port_star_indices(settings, k, indices, islice);
 
     if (!settings->airfoil.has_closed_te) {
-        k = fill_aft_indices(settings, k, indices);
+        k = fill_aft_indices(settings, k, indices, islice);
     }
 
     size_t num_tris_created = k / 3;
     assert(num_tris_created == num_tris);
-
-    return indices;
 }
 
 float get_surface_area(const Settings *settings) {

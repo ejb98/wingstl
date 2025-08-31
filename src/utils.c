@@ -23,6 +23,25 @@ float interp(Vec2D *p0, Vec2D *p2, float x) {
     return p0->y + (p2->y - p0->y) * (x - p0->x) / (p2->x - p0->x); 
 }
 
+int num_digits_in(int value) {
+    if (value == 0) {
+        return 1;
+    }
+
+    if (value < 0) {
+        value = -value;
+    }
+
+    int num_digits = 0;
+
+    while (value > 0) {
+        value /= 10;
+        num_digits++;
+    }
+
+    return num_digits;
+}
+
 void rstrip(char *line) {
     size_t length = strlen(line);
 

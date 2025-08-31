@@ -47,7 +47,7 @@ typedef struct Settings {
     Units units;
     Airfoil airfoil;
 
-    int num_pts_span;
+    int num_slices;
     int num_pts_chord;
 
     float semi_span;

@@ -32,15 +32,16 @@ size_t get_num_tris(const Settings *settings);
 size_t get_upper_index(const Settings *settings, int i, int j);
 size_t get_lower_index(const Settings *settings, int i, int j);
 
-size_t fill_upper_lower_indices(const Settings *settings, size_t k, size_t *inds);
-size_t fill_port_star_indices(const Settings *settings, size_t k, size_t *inds);
-size_t fill_aft_indices(const Settings *settings, size_t k, size_t *inds);
+size_t fill_upper_lower_indices(const Settings *settings, size_t k, size_t *inds, int islice);
+size_t fill_port_star_indices(const Settings *settings, size_t k, size_t *inds, int islice);
+size_t fill_aft_indices(const Settings *settings, size_t k, size_t *inds, int islice);
 
 Vec3D *make_pts(Settings *settings);
-size_t *make_indices(const Settings *settings);
 
 bool tip_overlap(const Settings *settings);
+
 void adjust_and_scale(Airfoil *airfoil, float xmin, float xmax);
+void assign_indices(const Settings *settings, size_t num_tris, int islice, size_t *indices);
 
 #endif
 

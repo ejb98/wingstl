@@ -220,6 +220,32 @@ int handle_chord_pts(int iarg, int num_args, char **args) {
     return num_pts;
 }
 
+int handle_num_slices(int iarg, int num_args, char **args) {
+    int num_slices = -1;
+    char desc[] = "number of model slices";
+
+    if (iarg + 1 < num_args) {
+        char *arg = args[iarg + 1];
+        num_slices = atoi(arg);
+
+        if (num_slices < MIN_NUM_SLICES) {
+            request_bounded_integer(desc, FLAG_NUM_SLICES, MIN_NUM_SLICES, "at least");
+            return -1;
+        }
+
+        if (num_slices > MAX_NUM_SLICES) {
+            request_bounded_integer(desc, FLAG_NUM_SLICES, MAX_NUM_SLICES, "at most");
+            return -1;
+        }
+
+    } else {
+        request_value(desc, FLAG_NUM_SLICES);
+        return -1;
+    }
+
+    return num_slices;
+}
+
 float handle_sweep(int iarg, int num_args, char **args, const char *arg_flag) {
     char desc[32];
     float sweep = -1.0f;
@@ -296,6 +322,10 @@ int handle_inputs(int num_args, char **args, Settings *settings) {
         } else if (strcmp(arg, FLAG_CHORD_PTS) == 0) {
             settings->num_pts_chord = handle_chord_pts(i, num_args, args);
             if (settings->num_pts_chord < 0) { return 1; } else { i++; }
+
+        } else if (strcmp(arg, FLAG_NUM_SLICES) == 0) {
+            settings->num_slices = handle_num_slices(i, num_args, args);
+            if (settings->num_slices < 0) { return 1; } else { i++; }
 
         } else if (strcmp(arg, FLAG_SWEEP_LE) == 0) {
             settings->sweep_angles[0] = handle_sweep(i, num_args, args, FLAG_SWEEP_LE);
