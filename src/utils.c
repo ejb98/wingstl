@@ -42,6 +42,14 @@ int num_digits_in(int value) {
     return num_digits;
 }
 
+bool has_ext(char *arg, const char *ext) {
+    size_t ext_len = strlen(ext);
+    size_t arg_len = strlen(arg);
+
+    char *ptr = strstr(arg, ext);
+    return ((ptr != NULL) && (ptr == arg + arg_len - ext_len));
+}
+
 void rstrip(char *line) {
     size_t length = strlen(line);
 

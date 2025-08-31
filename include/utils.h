@@ -25,6 +25,7 @@ void subtract(const Vec3D *a, const Vec3D *b, Vec3D *v);
 void normalize(Vec3D *v);
 
 bool nearly_equal(float a, float b);
+bool has_ext(char *arg, const char *ext);
 
 #endif
 

@@ -86,24 +86,32 @@ char *handle_output(int iarg, int num_args, char **args) {
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
-        int length = strlen(arg);
-        bool has_ext = (strstr(arg, ".stl") != NULL) || (strstr(arg, ".STL") != NULL);
+        int len = strlen(arg);
 
-        if (!has_ext) {
-            length += 4;
+        bool is_dir = (arg[len - 1] == '\\') || (arg[len - 1] == '/');
+        bool has_stl_ext = has_ext(arg, ".stl") || has_ext(arg, ".STL");
+
+        if (is_dir) {
+            len += strlen(DEFAULT_OUTPUT);
+        } else {
+            len += has_stl_ext ? 0 : 4;
         }
 
-        output = (char *) malloc((length + 1) * sizeof(char));
+        output = (char *) malloc((len + 1) * sizeof(char));
 
         if (output == NULL) {
             fprintf(stderr, "wingstl: error: unable to allocate memory for file output\n");
             return NULL;
         }
 
-        if (has_ext) {
-            strcpy(output, arg);
+        if (is_dir) {
+            sprintf(output, "%s%s", arg, DEFAULT_OUTPUT);
         } else {
-            sprintf(output, "%s.stl", arg);
+            if (has_stl_ext) {
+                strcpy(output, arg);
+            } else {
+                sprintf(output, "%s.stl", arg);
+            }
         }
 
     } else {
@@ -119,9 +127,9 @@ void handle_airfoil(int iarg, int num_args, char **args, Airfoil *airfoil) {
 
     if (iarg + 1 < num_args) {
         char *arg = args[iarg + 1];
-        bool has_ext = (strstr(arg, ".dat") != NULL) || (strstr(arg, ".DAT") != NULL);
+        bool has_dat_ext = has_ext(arg, ".dat") || has_ext(arg, ".DAT");
 
-        if (has_ext) {
+        if (has_dat_ext) {
             if (!read_dat(arg, airfoil)) {
                 return;
             }
