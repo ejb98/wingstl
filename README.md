@@ -21,7 +21,7 @@ Note: also use `-lm` flag if building on Linux.
 ```bash
 wingstl [OPTIONS]
 ```
-Generate an STL file for a swept wing given user-defined dimensions and NACA airfoil code (or .dat file name).
+Generate STL file(s) for a swept wing given user-defined dimensions and NACA airfoil code (or .dat file name).
 
 ### Options
 
@@ -29,19 +29,20 @@ Generate an STL file for a swept wing given user-defined dimensions and NACA air
 | ------ | ---- | ------------ | -------------------------------------------------------------------------------------- |
 | `-h`   | flag | *(n/a)*      | Show the help message and exit.                                                        |
 | `-v`   | flag | *(n/a)*      | Enable verbose output.                                                                 |
-| `-p`   | INT  | `100`        | Number of coordinate points along the chord (higher = smoother STL, larger file size). |
+| `-n`   | INT  | `1`          | Number of spanwise slices (outputs a unique file for each slice).                      |
+| `-p`   | INT  | `100`        | Number of chordwise points (higher = smoother STL, larger file size).                  |
 | `-a`   | STR  | *(required)* | NACA 4-digit airfoil code (e.g., `2412`, `0012`) or .dat file name.                    |
 | `-u`   | STR  | `"m"`        | Units for all dimensions (`m`, `cm`, `mm`, `ft`, or `in`).                             |
-| `-o`   | STR  | `"wing.stl"` | Output STL file name.                                                                  |
+| `-o`   | STR  | `"wing.stl"` | Output STL file name (index included automatically for multiple slices).               |
 | `-b`   | REAL | *(required)* | Wing **semi-span length** (distance from root to tip).                                 |
 | `-c`   | REAL | *(required)* | Wing **root chord length**.                                                            |
 | `-l`   | REAL | `90`         | **Leading edge sweep angle** in degrees (90° = no sweep).                              |
 | `-t`   | REAL | `90`         | **Trailing edge sweep angle** in degrees (90° = no sweep).                             |
 
 ### Examples
-Generate a 6 meter semi-span wing with a 1 m root chord using a NACA 2412 airfoil:
+Generate 4 slices for a 6 meter semi-span wing with a 1 m root chord using a NACA 2412 airfoil:
 ```bash
-wingstl -a 2412 -b 6 -c 1 -v -o planform.stl
+wingstl -a 2412 -b 6 -c 1 -v -n 4 -o planform.stl
 ```
 Generate a 3 foot semi-span wing with swept leading and trailing edges and using a Selig 1223 airfoil:
 ```bash
@@ -49,7 +50,7 @@ wingstl -a selig_1223.dat -b 3 -c 0.75 -u ft -l 85 -t 85
 
 ```
 ### Output
-The tool produces a standard `.stl` file that can be:
+The tool produces standard ASCII `.stl` files that can be:
 * Imported into CAD software for further modification
 * Loaded into a slicer for direct 3D printing
 * Used in CFD/FEA workflows for aerodynamic or structural analysis

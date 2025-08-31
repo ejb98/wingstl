@@ -29,9 +29,9 @@ void show_help(void) {
     printf("  %s  REAL\tTrailing edge sweep angle in degrees (default: %.0f)\n\n", FLAG_SWEEP_TE, DEFAULT_SWEEP_TE);
 
     printf("Examples:\n");
-    printf("  wingstl %s selig1223.dat %s 6 %s 1 %s %s 4 %s planform.stl\n", 
+    printf("  wingstl %s 2412 %s 6 %s 1 %s %s 4 %s planform.stl\n", 
               FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_VERBOSE, FLAG_NUM_SLICES, FLAG_OUTPUT);
-    printf("  wingstl %s 1224 %s 3 %s 0.75 %s in %s 85 %s 85\n\n", 
+    printf("  wingstl %s selig_1223.dat %s 3 %s 0.75 %s ft %s 85 %s 85\n\n", 
               FLAG_AIRFOIL, FLAG_SEMI_SPAN, FLAG_ROOT_CHORD, FLAG_UNITS, FLAG_SWEEP_LE, FLAG_SWEEP_TE);
 
     printf("Report bugs to: github.com/ejb98/wingstl\n");
