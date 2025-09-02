@@ -42,7 +42,7 @@ float handle_nonzero_positive(int iarg, int num_args, char **args, const char *d
     float value = -1.0f;
 
     if (iarg + 1 < num_args) {
-        value = atof(args[iarg + 1]);
+        value = (float) atof(args[iarg + 1]);
 
         if (value <= 0.0f) {
             request_nonzero_positive(desc, flag);
