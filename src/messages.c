@@ -80,7 +80,7 @@ void show_settings(const Settings *settings) {
     printf("  Trailing edge sweep angle:\t%.2f deg\n", settings->sweep_angles[1]);
     printf("  Trailing edge configuration:\t%s\n", (settings->airfoil.has_closed_te ? "closed" : "open"));
     printf("  Chordwise points:\t\t%d\n", settings->num_pts_chord);
-    printf("  Number of Slices:\t\t%d\n", settings->num_slices);
+    printf("  Number of slices:\t\t%d\n", settings->num_slices);
 }
 
 /*
